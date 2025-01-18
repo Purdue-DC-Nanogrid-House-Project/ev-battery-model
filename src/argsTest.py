@@ -1,7 +1,7 @@
 import argparse
 parser = argparse.ArgumentParser(description='Battery Model Parameters')
 
-#Default to Tesla Powerwall Values
+#Function to test whether efficincies are between 0.00 and 1.00
 def check_eta(value):
     """Check if the value is between 0 and 1"""
     f_value = float(value)  # Convert the input to float
@@ -9,6 +9,7 @@ def check_eta(value):
         raise argparse.ArgumentTypeError(f"{value} is not between 0 and 1")
     return f_value
 
+#Function to test whether capacities and time constant are positive
 def check_pos(value):
     """Check if the value is less than 0"""
     f_value = float(value)  # Convert the input to float
@@ -29,7 +30,6 @@ parser.add_argument('--p_c_bar', type=check_pos, default=5, help='Electrical Cha
 parser.add_argument('--p_d_bar', type=check_pos, default=5, help='Electrical Discharging Capacity (kW)[eg. 5,6]')
 
 args = parser.parse_args()
-
 
 # Print the parsed arguments for verification
 print(f"tau: {args.tau}")
