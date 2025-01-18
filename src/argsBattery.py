@@ -32,9 +32,13 @@ parser.add_argument('--p_d_bar', type=check_pos, default=5, help='Electrical Dis
 args = parser.parse_args()
 
 # Print the parsed arguments for verification
+print(f"Battery Model Parmaters:")
+print(f" ")
 print(f"tau: {args.tau}")
 print(f"eta_c: {args.eta_c}")
 print(f"eta_d: {args.eta_d}")
 print(f"x_bar: {args.x_bar}")
 print(f"p_c_bar: {args.p_c_bar}")
 print(f"p_d_bar: {args.p_d_bar}")
+
+
