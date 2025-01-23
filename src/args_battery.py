@@ -27,6 +27,10 @@ parser.add_argument('--x_bar', type=check_pos, default=13.5, help='Chemical Ener
 parser.add_argument('--p_c_bar', type=check_pos, default=5, help='Electrical Charging Capacity (kW) [e.g., 5, 6]')
 parser.add_argument('--p_d_bar', type=check_pos, default=5, help='Electrical Discharging Capacity (kW) [e.g., 5, 6]')
 
+# Power rating and resistance parameters
+parser.add_argument('--V_nom', type=check_pos, default=384, help='Nominal Voltage (V) [e.g., 380, 384]')
+parser.add_argument('--P_rated', type=check_pos, default=12.5, help='Power Rating (kWh) [e.g., 12.5,13.5]')
+
 args = parser.parse_args()
 
 # Print the parsed arguments for verification

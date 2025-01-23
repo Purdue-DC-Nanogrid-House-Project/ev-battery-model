@@ -27,9 +27,16 @@ parser.add_argument('--x_bar', type=check_pos, default=13.5, help='Chemical Ener
 parser.add_argument('--p_c_bar', type=check_pos, default=5, help='Electrical Charging Capacity (kW) [e.g., 5, 6]')
 parser.add_argument('--p_d_bar', type=check_pos, default=5, help='Electrical Discharging Capacity (kW) [e.g., 5, 6]')
 
+# Power rating and resistance parameters
+parser.add_argument('--V_nom', type=check_pos, default=384, help='Nominal Voltage (V) [e.g., 380, 384]')
+parser.add_argument('--P_rated', type=check_pos, default=12.5, help='Power Rating (kWh) [e.g., 12.5,13.5]')
+
 # Intensity Paramaters
 parser.add_argument('--alpha', type=check_pos, default=(0.15+0.4)/2, help='Energy Intensity (kWh/km) [e.g., 0.15,0.4]')
 parser.add_argument('--Temperature', type=float, default=-1, help='Temperature (F) [e.g.68,20]')
+
+
+
 
 args = parser.parse_args()
 
