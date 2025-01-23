@@ -1,8 +1,9 @@
 import argparse
+import logging
 
-parser = argparse.ArgumentParser(description='Battery Model Parameters')
+# Set up logging configuration
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Default to Tesla Powerwall Values
 def check_eta(value):
     """Check if the value is between 0 and 1"""
     f_value = float(value)  # Convert the input to float
@@ -17,26 +18,26 @@ def check_pos(value):
         raise argparse.ArgumentTypeError(f"{value} is less than 0 (expected a value >= 0)")
     return f_value
 
-# Efficiency Parameters
-parser.add_argument('--tau', type=check_pos, default=(800 + 2400) / 2, help='Dissipation Time Constant (h) [typically between 800-2400 h]')
-parser.add_argument('--eta_c', type=check_eta, default=0.95, help='Charging Efficiency (fraction, e.g., 0.95 for 95%%)')
-parser.add_argument('--eta_d', type=check_eta, default=0.95, help='Discharging Efficiency (fraction, e.g., 0.95 for 95%%)')
+def parse_battery_args():
+    """Parse command line arguments for battery model parameters."""
+    parser = argparse.ArgumentParser(description='Battery Model Parameters')
 
-# Capacity Parameters 
-parser.add_argument('--x_bar', type=check_pos, default=13.5, help='Chemical Energy Capacity (kWh) [e.g., 15, 13.5]')
-parser.add_argument('--p_c_bar', type=check_pos, default=5, help='Electrical Charging Capacity (kW) [e.g., 5, 6]')
-parser.add_argument('--p_d_bar', type=check_pos, default=5, help='Electrical Discharging Capacity (kW) [e.g., 5, 6]')
+    # Efficiency Parameters
+    parser.add_argument('--tau_b', type=check_pos, default=(800 + 2400) / 2, help='Dissipation Time Constant (h) [typically between 800-2400 h]')
+    parser.add_argument('--eta_c_b', type=check_eta, default=0.95, help='Charging Efficiency (fraction, e.g., 0.95 for 95%%)')
+    parser.add_argument('--eta_d_b', type=check_eta, default=0.95, help='Discharging Efficiency (fraction, e.g., 0.95 for 95%%)')
 
-# Power rating and resistance parameters
-parser.add_argument('--V_nom', type=check_pos, default=384, help='Nominal Voltage (V) [e.g., 380, 384]')
-parser.add_argument('--P_rated', type=check_pos, default=12.5, help='Power Rating (kWh) [e.g., 12.5,13.5]')
+    # Capacity Parameters 
+    parser.add_argument('--x_bar_b', type=check_pos, default=13.5, help='Chemical Energy Capacity (kWh) [e.g., 15, 13.5]')
+    parser.add_argument('--p_c_bar_b', type=check_pos, default=5, help='Electrical Charging Capacity (kW) [e.g., 5, 6]')
+    parser.add_argument('--p_d_bar_b', type=check_pos, default=5, help='Electrical Discharging Capacity (kW) [e.g., 5, 6]')
 
-args = parser.parse_args()
+    # Power rating and resistance parameters
+    parser.add_argument('--V_nom_b', type=check_pos, default=384, help='Nominal Voltage (V) [e.g., 380, 384]')
+    parser.add_argument('--P_rated_b', type=check_pos, default=12.5, help='Power Rating (kWh) [e.g., 12.5,13.5]')
 
-# Print the parsed arguments for verification
-print(f"tau: {args.tau}")
-print(f"eta_c: {args.eta_c}")
-print(f"eta_d: {args.eta_d}")
-print(f"x_bar: {args.x_bar}")
-print(f"p_c_bar: {args.p_c_bar}")
-print(f"p_d_bar: {args.p_d_bar}")
+    args = parser.parse_args()
+    return args
+
+if __name__ == "__main__":
+    parse_battery_args()
