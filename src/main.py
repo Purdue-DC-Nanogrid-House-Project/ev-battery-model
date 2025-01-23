@@ -1,6 +1,9 @@
+import logging
 import args_battery
 import args_ev
-import logging 
+
+# Set up logging configuration
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def main():
     # Parse arguments for the battery model
@@ -9,26 +12,29 @@ def main():
     # Parse arguments for the electric vehicle model
     ev_args = args_ev.parse_ev_args()
 
-    # Now you can use battery_args and ev_args in your model
-    # For example, you might want to log or print the parameters
-    # Here, we can just log the parameters for demonstration
+    # Log the parsed battery parameters
     logging.info("Battery Parameters:")
-    logging.info(f"  tau: {battery_args.tau}")
-    logging.info(f"  eta_c: {battery_args.eta_c}")
-    logging.info(f"  eta_d: {battery_args.eta_d}")
-    logging.info(f"  x_bar: {battery_args.x_bar}")
-    logging.info(f"  p_c_bar: {battery_args.p_c_bar}")
-    logging.info(f"  p_d_bar: {battery_args.p_d_bar}")
+    logging.info(f"  tau_b: {battery_args.tau_b}")
+    logging.info(f"  eta_c_b: {battery_args.eta_c_b}")
+    logging.info(f"  eta_d_b: {battery_args.eta_d_b}")
+    logging.info(f"  x_bar_b: {battery_args.x_bar_b}")
+    logging.info(f"  p_c_bar_b: {battery_args.p_c_bar_b}")
+    logging.info(f"  p_d_bar_b: {battery_args.p_d_bar_b}")
+    logging.info(f"  V_nom_b: {battery_args.V_nom_b}")
+    logging.info(f"  P_rated_b: {battery_args.P_rated_b}")
 
+    # Log the parsed electric vehicle parameters
     logging.info("Electric Vehicle Parameters:")
-    logging.info(f"  tau: {ev_args.tau}")
-    logging.info(f"  eta_c: {ev_args.eta_c}")
-    logging.info(f"  eta_d: {ev_args.eta_d}")
-    logging.info(f"  x_bar: {ev_args.x_bar}")
-    logging.info(f"  p_c_bar: {ev_args.p_c_bar}")
-    logging.info(f"  p_d_bar: {ev_args.p_d_bar}")
-    logging.info(f"  alpha: {ev_args.alpha}")
-    logging.info(f"  Temperature: {ev_args.Temperature}")
+    logging.info(f"  tau_ev: {ev_args.tau_ev}")
+    logging.info(f"  eta_c_ev: {ev_args.eta_c_ev}")
+    logging.info(f"  eta_d_ev: {ev_args.eta_d_ev}")
+    logging.info(f"  x_bar_ev: {ev_args.x_bar_ev}")
+    logging.info(f"  p_c_bar_ev: {ev_args.p_c_bar_ev}")
+    logging.info(f"  p_d_bar_ev: {ev_args.p_d_bar_ev}")
+    logging.info(f"  V_nom_ev: {ev_args.V_nom_ev}")
+    logging.info(f"  P_rated_ev: {ev_args.P_rated_ev}")
+    logging.info(f"  alpha_ev: {ev_args.alpha_ev}")
+    logging.info(f"  Temperature_ev: {ev_args.Temperature_ev}")
 
 if __name__ == "__main__":
     main()
