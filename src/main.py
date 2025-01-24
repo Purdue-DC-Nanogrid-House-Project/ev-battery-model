@@ -1,5 +1,6 @@
 import logging
 import args_handler
+import matplotlib
 # Set up logging configuration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
