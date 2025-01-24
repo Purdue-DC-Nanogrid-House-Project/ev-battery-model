@@ -49,7 +49,10 @@ def args_handler():
     parser.add_argument('--P_rated_ev', type=check_pos, default=12.5, help='Power Rating (kWh) [e.g., 12.5,13.5]')
         ## Intensity Parameters
     parser.add_argument('--alpha_ev', type=check_pos, default=(0.15 + 0.4) / 2, help='Energy Intensity (kWh/km) [e.g., 0.15,0.4]')
-    parser.add_argument('--Temperature_ev', type=float, default=-1, help='Temperature (F) [e.g.68,20]')
+    parser.add_argument('--temperature_ev', type=float, default=-1, help='Temperature (F) [e.g.68,20]')
+        ## Use Paramaters
+    parser.add_argument('--distance',type=check_pos, default=10, help='Distance Driven (km) [e.g. 30, 50]')
+
 
 
     args = parser.parse_args()
