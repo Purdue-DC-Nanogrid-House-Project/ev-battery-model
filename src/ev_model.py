@@ -41,7 +41,7 @@ class EVModel:
 if __name__ == "__main__":
     dt = 1.0  # Example time step in hours
     # Example parameters (these should be replaced with actual values from command line arguments)
-    tau_ev = 800  # Example value
+    tau_ev = 1600  # Example value
     eta_c_ev = 0.95
     eta_d_ev = 0.95
     x_bar_ev = 13.5

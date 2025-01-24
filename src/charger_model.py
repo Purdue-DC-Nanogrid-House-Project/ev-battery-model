@@ -37,7 +37,7 @@ class BatteryModel:
 if __name__ == "__main__":
     dt = 1.0  # Example time step in hours
     # Example parameters (these should be replaced with actual values from command line arguments)
-    tau_b = 800  # Example value
+    tau_b = 1600  # Example value
     eta_c_b = 0.95
     eta_d_b = 0.95
     x_bar_b = 13.5
