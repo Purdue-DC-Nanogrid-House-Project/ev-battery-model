@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.signal import cont2discrete
+import control
 
 class BatteryModel:
     def __init__(self, dt, tau_b, eta_c_b, eta_d_b, x_bar_b, p_c_bar_b, p_d_bar_b, V_nom_b, P_rated_b):
@@ -17,21 +17,21 @@ class BatteryModel:
         self.R_in = self.V_nom_b**2 / self.P_rated_b  # ohms
 
         # State-space representation
-        self.Ad, self.Bd = self.battery_model()
+        self.sys_d = self.battery_model()
 
     def battery_model(self):
-        A_bat = 0
-        B_bat = self.eta_c_b / self.x_bar_b
-        C_bat = 1
+        A_bat = np.array([[0]])  # State matrix (1x1 matrix)
+        B_bat = np.array([[self.eta_c_ev / self.x_bar_ev]])  # Input matrix (1x1 matrix)
+        C_bat = np.array([[1]])  # Output matrix (1x1 matrix)
+        D_bat = np.array([[0]])  # Feedforward matrix (1x1 matrix)
 
         # Continuous-time state-space representation
-        sys_continuous = (A_bat, B_bat, C_bat, 0)
+        sys_continuous = control.ss(A_bat, B_bat, C_bat, D_bat)
 
         # Convert to discrete-time state-space representation
-        sys_discrete = cont2discrete(sys_continuous, self.dt, method='zoh')
-        Ad, Bd, _, _ = sys_discrete
+        sys_discrete = control.sample_system(sys_continuous,dt, method='zoh')
 
-        return Ad, Bd
+        return sys_discrete
 
 # Example usage
 if __name__ == "__main__":
@@ -49,5 +49,5 @@ if __name__ == "__main__":
     Temperature_b = 20  # Example value
 
     battery_model = BatteryModel(dt, tau_b, eta_c_b, eta_d_b, x_bar_b, p_c_bar_b, p_d_bar_b, V_nom_b, P_rated_b)
-    print(f"Ad: {battery_model.Ad}")
-    print(f"Bd: {battery_model.Bd}")
+    print(f"sys_d: {battery_model.sys_d}")
+    
