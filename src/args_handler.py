@@ -18,31 +18,42 @@ def check_pos(value):
         raise argparse.ArgumentTypeError(f"{value} is less than 0 (expected a value >= 0)")
     return f_value
 
-def parse_ev_args():
-    """Parse command line arguments for electric vehicle model parameters."""
-    parser = argparse.ArgumentParser(description='Electric Vehicle Model Parameters')
+def args_handler():
+    """Parse command line arguments for battery model parameters."""
+    parser = argparse.ArgumentParser(description='Charger Battery Model (b) and Electric Vehicle(ev) Parameters')
 
-    # Efficiency Parameters
+    # Charger Battery
+        ## Efficiency Parameters
+    parser.add_argument('--tau_b', type=check_pos, default=(800 + 2400) / 2, help='Dissipation Time Constant (h) [typically between 800-2400 h]')
+    parser.add_argument('--eta_c_b', type=check_eta, default=0.95, help='Charging Efficiency (fraction, e.g., 0.95 for 95%%)')
+    parser.add_argument('--eta_d_b', type=check_eta, default=0.95, help='Discharging Efficiency (fraction, e.g., 0.95 for 95%%)')
+        ## Capacity Parameters 
+    parser.add_argument('--x_bar_b', type=check_pos, default=13.5, help='Chemical Energy Capacity (kWh) [e.g., 15, 13.5]')
+    parser.add_argument('--p_c_bar_b', type=check_pos, default=5, help='Electrical Charging Capacity (kW) [e.g., 5, 6]')
+    parser.add_argument('--p_d_bar_b', type=check_pos, default=5, help='Electrical Discharging Capacity (kW) [e.g., 5, 6]')
+        ##Power rating and resistance parameters
+    parser.add_argument('--V_nom_b', type=check_pos, default=384, help='Nominal Voltage (V) [e.g., 380, 384]')
+    parser.add_argument('--P_rated_b', type=check_pos, default=12.5, help='Power Rating (kWh) [e.g., 12.5,13.5]')
+
+    # Electric Vehicle
+        ## Efficiency Parameters
     parser.add_argument('--tau_ev', type=check_pos, default=(800 + 2400) / 2, help='Dissipation Time Constant (h) [typically between 800-2400 h]')
     parser.add_argument('--eta_c_ev', type=check_eta, default=0.95, help='Charging Efficiency (fraction, e.g., 0.95 for 95%%)')
     parser.add_argument('--eta_d_ev', type=check_eta, default=0.95, help='Discharging Efficiency (fraction, e.g., 0.95 for 95%%)')
-
-    # Capacity Parameters 
+        ## Capacity Parameters 
     parser.add_argument('--x_bar_ev', type=check_pos, default=13.5, help='Chemical Energy Capacity (kWh) [e.g., 15, 13.5]')
     parser.add_argument('--p_c_bar_ev', type=check_pos, default=5, help='Electrical Charging Capacity (kW) [e.g., 5, 6]')
     parser.add_argument('--p_d_bar_ev', type=check_pos, default=5, help='Electrical Discharging Capacity (kW) [e.g., 5, 6]')
-
-    # Power rating and resistance parameters
+        ## Power rating and resistance parameters
     parser.add_argument('--V_nom_ev', type=check_pos, default=384, help='Nominal Voltage (V) [e.g., 380, 384]')
     parser.add_argument('--P_rated_ev', type=check_pos, default=12.5, help='Power Rating (kWh) [e.g., 12.5,13.5]')
-
-    # Intensity Parameters
+        ## Intensity Parameters
     parser.add_argument('--alpha_ev', type=check_pos, default=(0.15 + 0.4) / 2, help='Energy Intensity (kWh/km) [e.g., 0.15,0.4]')
     parser.add_argument('--Temperature_ev', type=float, default=-1, help='Temperature (F) [e.g.68,20]')
 
-    args = parser.parse_args()
 
+    args = parser.parse_args()
     return args
 
 if __name__ == "__main__":
-    parse_ev_args()
+    args_handler()
