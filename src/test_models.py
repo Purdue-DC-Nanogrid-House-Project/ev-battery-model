@@ -16,14 +16,14 @@ def test_ev_charging(ev_model, battery_model, initial_charge, target_charge):
     df_ev = pd.DataFrame({
         'Time (hours)': time_range,
         'SoC (kWh)': np.zeros(len(time_range)),  # Placeholder for SoC values
-        'Charger Power (kW)': np.zeros(len(time_range))  # Placeholder for charger power values
+        'Charger_Battery Power (kW)': np.zeros(len(time_range))  # Placeholder for charger power values
     })
 
     # Create DataFrame for Battery
     df_b = pd.DataFrame({
         'Time (hours)': time_range,
         'SoC (kWh)': np.zeros(len(time_range)),  # Placeholder for SoC values
-        'Battery Power (kW)': np.zeros(len(time_range))  # Placeholder for battery power values
+        'EV_Battery Power (kW)': np.zeros(len(time_range))  # Placeholder for battery power values
     })
 
     #Assign Initial states
