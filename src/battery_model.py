@@ -21,7 +21,7 @@ class BatteryModel:
 
     def battery_model(self):
         A_bat = np.array([[0]])  # State matrix (1x1 matrix)
-        B_bat = np.array([[self.eta_c_ev / self.x_bar_ev]])  # Input matrix (1x1 matrix)
+        B_bat = np.array([[self.eta_c_b / self.x_bar_b]])  # Input matrix (1x1 matrix)
         C_bat = np.array([[1]])  # Output matrix (1x1 matrix)
         D_bat = np.array([[0]])  # Feedforward matrix (1x1 matrix)
 
@@ -29,7 +29,7 @@ class BatteryModel:
         sys_continuous = control.ss(A_bat, B_bat, C_bat, D_bat)
 
         # Convert to discrete-time state-space representation
-        sys_discrete = control.sample_system(sys_continuous,dt, method='zoh')
+        sys_discrete = control.sample_system(sys_continuous,self.dt, method='zoh')
 
         return sys_discrete
 
@@ -45,8 +45,6 @@ if __name__ == "__main__":
     p_d_bar_b = 5
     V_nom_b = 384
     P_rated_b = 12.5
-    alpha_b = 0.275  # Example value
-    Temperature_b = 20  # Example value
 
     battery_model = BatteryModel(dt, tau_b, eta_c_b, eta_d_b, x_bar_b, p_c_bar_b, p_d_bar_b, V_nom_b, P_rated_b)
     print(f"sys_d: {battery_model.sys_d}")

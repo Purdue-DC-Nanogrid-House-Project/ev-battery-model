@@ -33,7 +33,7 @@ class EVModel:
 
         # Discrete-time stat space representation
 
-        sys_discrete = control.sample_system(sys_continuous,dt, method='zoh')
+        sys_discrete = control.sample_system(sys_continuous,self.dt, method='zoh')
 
         return sys_discrete
     
