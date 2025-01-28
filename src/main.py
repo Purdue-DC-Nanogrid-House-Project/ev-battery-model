@@ -41,7 +41,7 @@ def main():
         print(f" ")
 
         # Create instances of the models
-        dt = 1.0  # Example time step in hours
+        dt = 1/60  # Example time step in hours
 
         # Create BatteryModel instance
         charger_model = BatteryModel(

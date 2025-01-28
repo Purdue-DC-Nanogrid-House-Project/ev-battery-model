@@ -21,7 +21,7 @@ class BatteryModel:
 
     def battery_model(self):
         A_bat = np.array([[0]])  # State matrix (1x1 matrix)
-        B_bat = np.array([[self.eta_c_b / self.x_bar_b]])  # Input matrix (1x1 matrix)
+        B_bat = np.array([[self.eta_c_b]])  # Input matrix (1x1 matrix)
         C_bat = np.array([[1]])  # Output matrix (1x1 matrix)
         D_bat = np.array([[0]])  # Feedforward matrix (1x1 matrix)
 
