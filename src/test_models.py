@@ -37,8 +37,8 @@ def test_ev_charging(ev_model, battery_model, initial_charge, target_charge):
     df_b.iloc[0,2] = 0
 
 
-    print(ev_model.sys_d.A,ev_model.sys_d.B)
-    print(battery_model.sys_d.A,battery_model.sys_d.B)
+    # print(ev_model.sys_d.A,ev_model.sys_d.B)
+    # print(battery_model.sys_d.A,battery_model.sys_d.B)
     
 
     for i in range(len(df_ev)-1):
@@ -70,25 +70,28 @@ def test_ev_charging(ev_model, battery_model, initial_charge, target_charge):
                  
 
     # Plotting SoC for EV and Battery
-    plt.figure(figsize=(12, 6))
+    plt.figure(figsize=(12, 9))
+    plt.subplot(2, 1, 1)  # 2 rows, 1 column, 1st subplot
     plt.plot(df_ev.iloc[:, 0], df_ev.iloc[:, 1], label='EV SoC (kWh)', color='blue')  # Time vs EV SoC
     plt.plot(df_b.iloc[:, 0], df_b.iloc[:, 1], label='Battery SoC (kWh)', color='orange')  # Time vs Battery SoC
     plt.title('State of Charge (SoC) Over Time')
     plt.xlabel('Time (hours)')
     plt.ylabel('SoC (kWh)')
+    plt.ylim(0,np.max([np.max(df_ev.iloc[:, 1]), np.max(df_b.iloc[:, 1])])+2)
     plt.legend()
     plt.grid()
-    plt.show()
 
     # Plotting Charger Power and Battery Power on the same graph
-    plt.figure(figsize=(12, 6))
+    plt.subplot(2, 1, 2)  # 2 rows, 1 column, 1st subplot
     plt.plot(df_ev.iloc[:, 0], df_ev.iloc[:, 2], label='EV Power (kW)', color='green')  # Time vs Charger Power
     plt.plot(df_b.iloc[:, 0], df_b.iloc[:, 2], label='Charger Power (kW)', color='purple')  # Time vs Battery Power
     plt.title('Power Over Time')
     plt.xlabel('Time (hours)')
     plt.ylabel('Power (kW)')
+    plt.ylim(np.min([np.min(df_ev.iloc[:, 2]), np.min(df_b.iloc[:, 2])])-2,np.max([np.max(df_ev.iloc[:, 2]), np.max(df_b.iloc[:, 2])])+2)
     plt.legend()
     plt.grid()
+
     plt.tight_layout()  # Adjust layout to prevent overlap
     plt.show()
 
