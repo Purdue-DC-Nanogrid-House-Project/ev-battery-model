@@ -46,13 +46,17 @@ def test_ev_charging(ev_model, battery_model, initial_charge, target_charge):
             if df_ev.iloc[i,0] > 2:
                 # Check if the current SoC is less than the target SoC
                 if df_ev.iloc[i,1] < target_soc_ev:
-                   #Setting SOC
-                   df_ev.iloc[i+1,1] = df_ev.iloc[i,1]*ev_model.sys_d.A + (ev_model.sys_d.B)*ev_model.p_c_bar_ev
-                   df_b.iloc[i+1,1] = df_b.iloc[i,1]*battery_model.sys_d.A - (battery_model.sys_d.B)*battery_model.p_d_bar_b
+                    #Determining EV charge rate & Updating EV SOC
+                    U = ev_model.p_c_bar_ev
+                    df_ev.iloc[i+1,1] = df_ev.iloc[i,1]*ev_model.sys_d.A + (ev_model.sys_d.B)*U
 
-                   #Setting Power
-                   df_ev.iloc[i+1,2] = ev_model.p_c_bar_ev * ev_model.eta_c_ev
-                   df_b.iloc[i+1,2] = -battery_model.p_d_bar_b * battery_model.eta_d_b
+                    #Solve for Battery discharging rate & Updating Battery SOC
+                    P_discharge = U / battery_model.eta_d_b
+                    df_b.iloc[i+1,1] = df_b.iloc[i,1]*battery_model.sys_d.A - (battery_model.sys_d.B)*P_discharge
+
+                    #Setting Power
+                    df_ev.iloc[i+1,2] = ev_model.p_c_bar_ev * ev_model.eta_c_ev
+                    df_b.iloc[i+1,2] = -P_discharge* battery_model.eta_d_b
                 
                 else:
                     df_ev.iloc[i+1, 1] =  df_ev.iloc[i, 1] #Battery Reached desired state
