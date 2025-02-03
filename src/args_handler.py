@@ -53,7 +53,6 @@ def args_handler():
         ## Use Paramaters
     parser.add_argument('--distance',type=check_pos, default=10, help='Distance Driven (km) [e.g. 30, 50]')
 
-
     # Display Parameters
     parser.add_argument('--check_params',type=bool, default=False, help='Check Parameters [True/False]')
 

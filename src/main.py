@@ -4,6 +4,8 @@ import args_handler
 from ev_model import EVModel  # Import the EVModel class
 from battery_model import BatteryModel  # Import the BatteryModel class
 from test_models import test_ev_charging  # Import the test function
+from utility_model import UtilityModel #Import UtilityModel class
+from home_model import HomeModel # Import UtilityModel Class
 
 # Set up logging configuration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -69,6 +71,18 @@ def main():
             P_rated_ev=model_args.P_rated_ev,
             alpha_ev=model_args.alpha_ev,
             Temperature_ev=model_args.temperature_ev
+        )
+
+        # Create Utility Model Instance
+        utility_model = UtilityModel(
+            dt = dt,
+            utility = 0
+        )
+
+        home_demand = 15 #KW
+        home_model = HomeModel(
+            dt = dt,
+            demand = home_demand
         )
 
         # Run the test
