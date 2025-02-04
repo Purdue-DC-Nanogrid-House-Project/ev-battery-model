@@ -152,6 +152,7 @@ def test_ev_charging_v2(ev_model,battery_model,home_model,utility_model,initial_
 
         U_TOTAL = U_HOME + U_EV
 
+        #Discharging charger battery only if SOC_b>0
         if df_b.iloc[i,1] > 0:
             if U_TOTAL >= battery_model.p_d_bar_b:
                 P_discharge = battery_model.p_d_bar_b/battery_model.eta_d_b
@@ -171,6 +172,34 @@ def test_ev_charging_v2(ev_model,battery_model,home_model,utility_model,initial_
         df_ev.iloc[i+1,2] = U_EV
         df_b.iloc[i+1,2] = -P_discharge
         df_u.iloc[i+1,1] = -utility_model.utility
+
+    # Plotting SoC for EV and Battery
+    plt.figure(figsize=(12, 9))
+    plt.subplot(2, 1, 1)  # 2 rows, 1 column, 1st subplot
+    plt.plot(df_ev.iloc[:, 0], df_ev.iloc[:, 1], label='EV SoC (kWh)', color='blue')  # Time vs EV SoC
+    plt.plot(df_b.iloc[:, 0], df_b.iloc[:, 1], label='Battery SoC (kWh)', color='orange')  # Time vs Battery SoC
+    plt.title('State of Charge (SoC) Over Time')
+    plt.xlabel('Time (hours)')
+    plt.ylabel('SoC (kWh)')
+    plt.ylim(0,np.max([np.max(df_ev.iloc[:, 1]), np.max(df_b.iloc[:, 1])])+2)
+    plt.legend()
+    plt.grid()
+
+    # Plotting Charger Power and Battery Power on the same graph
+    plt.subplot(2, 1, 2)  # 2 rows, 1 column, 1st subplot
+    plt.plot(df_ev.iloc[:, 0], df_ev.iloc[:, 2], label='EV Power (kW)', color='green')  # Time vs Charger Power
+    plt.plot(df_b.iloc[:, 0], df_b.iloc[:, 2], label='Charger Power (kW)', color='purple')  # Time vs Battery Power
+    plt.plot(df_u.iloc[:,0],df_u.iloc[:,1],label='Utility Power (kW)', color='black')
+    plt.title('Power Over Time')
+    plt.xlabel('Time (hours)')
+    plt.ylabel('Power (kW)')
+    plt.ylim(np.min([np.min(df_ev.iloc[:, 2]), np.min(df_b.iloc[:, 2]),np.min(df_u.iloc[:, 1])])-2,np.max([np.max(df_ev.iloc[:, 2]), np.max(df_b.iloc[:, 2]),np.max(df_u.iloc[:, 1])])+2)
+    plt.legend()
+    plt.grid()
+
+    plt.tight_layout()  # Adjust layout to prevent overlap
+    plt.show()
+    
 
 if __name__ == "__main__":
     # This block is not needed since we will call the function from main.py

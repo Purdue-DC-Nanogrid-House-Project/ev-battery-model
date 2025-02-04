@@ -79,6 +79,7 @@ def main():
             utility = 0
         )
 
+        # Create Home Model Instance
         home_demand = 15 #KW
         home_model = HomeModel(
             dt = dt,
