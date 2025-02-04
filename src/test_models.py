@@ -172,14 +172,6 @@ def test_ev_charging_v2(ev_model,battery_model,home_model,utility_model,initial_
         df_b.iloc[i+1,2] = -P_discharge
         df_u.iloc[i+1,1] = -utility_model.utility
 
-
-
-
-        
-        
-
-  
-
 if __name__ == "__main__":
     # This block is not needed since we will call the function from main.py
     pass
