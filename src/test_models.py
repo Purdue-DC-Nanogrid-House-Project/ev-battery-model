@@ -99,7 +99,7 @@ def test_ev_charging(ev_model, battery_model, initial_charge, target_charge):
     plt.tight_layout()  # Adjust layout to prevent overlap
     plt.show()
 
-def test_ev_charging_v2(ev_model,battery_model,home_model,utility_model,initial_charge,target_charge):
+def test_ev_charging_v2(ev_model,battery_model,home_model,utility_model,initial_charge,target_charge,ev_call):
         # Convert percentages to state of charge (SoC) in kWh for ev
     initial_soc_ev = initial_charge * ev_model.x_bar_ev
     target_soc_ev = target_charge * ev_model.x_bar_ev
@@ -146,7 +146,7 @@ def test_ev_charging_v2(ev_model,battery_model,home_model,utility_model,initial_
     for i in range(len(df_ev)-1):
         #Charging only if the current_soc < target_soc and plugged in at 2 AM
         if (df_ev.iloc[i,0] >2) and df_ev.iloc[i,1] < target_soc_ev:
-            U_EV = ev_model.p_c_bar_ev
+            U_EV = ev_call
         else:
             U_EV = 0
 

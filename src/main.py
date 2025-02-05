@@ -3,9 +3,11 @@ import args_handler
 
 from ev_model import EVModel  # Import the EVModel class
 from battery_model import BatteryModel  # Import the BatteryModel class
-from test_models import test_ev_charging  # Import the test function
 from utility_model import UtilityModel #Import UtilityModel class
 from home_model import HomeModel # Import UtilityModel Class
+
+
+from test_models import test_ev_charging,test_ev_charging_v2 # Import the test function
 
 # Set up logging configuration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -86,8 +88,17 @@ def main():
             demand = home_demand
         )
 
-        # Run the test
-        test_ev_charging(ev_model, charger_model, initial_charge=0.5, target_charge=0.9)
+        # # Run basic model test
+        # test_ev_charging(ev_model, charger_model, initial_charge=0.5, target_charge=0.9)
+
+        # Run test with Utility and Home
+        ## Case 1
+        home_model.demand = 15 #(kW), EV call for 6(kW)
+        test_ev_charging_v2(ev_model,charger_model,home_model,utility_model,initial_charge=0.7, target_charge=0.8, ev_call = 6)
+
+        ## Case 2
+        home_model.demand = 8 #(kW), EV call for 13.5 (kW)
+        test_ev_charging_v2(ev_model,charger_model,home_model,utility_model,initial_charge=0.7, target_charge=0.8, ev_call = ev_model.p_c_bar_ev)
 
 if __name__ == "__main__":
     main()
