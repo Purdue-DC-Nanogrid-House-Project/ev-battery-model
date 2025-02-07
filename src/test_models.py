@@ -100,7 +100,7 @@ def test_ev_charging(ev_model, battery_model, initial_charge, target_charge):
     plt.show()
 
 def test_ev_charging_v2(ev_model,battery_model,home_model,utility_model,initial_charge,target_charge,ev_call):
-        # Convert percentages to state of charge (SoC) in kWh for ev
+    # Convert percentages to state of charge (SoC) in kWh for ev
     initial_soc_ev = initial_charge * ev_model.x_bar_ev
     target_soc_ev = target_charge * ev_model.x_bar_ev
 
@@ -123,10 +123,18 @@ def test_ev_charging_v2(ev_model,battery_model,home_model,utility_model,initial_
         'Charger_Battery Power (kW)': np.zeros(len(time_range))  # Placeholder for battery power values
     })
 
+    # Create DataFrame for Utility
     df_u = pd.DataFrame({
         'Time (hours)': time_range,
         'Utility Power (kW)': np.zeros(len(time_range))  # Placeholder for battery power values
     })
+
+    # Create DataFrame for Utility
+    df_h = pd.DataFrame({
+        'Time (hours)': time_range,
+        'Utility Power (kW)': np.zeros(len(time_range))  # Placeholder for battery power values
+    })
+
 
     #Set Initial states SOC's
     df_ev.iloc[0,1] = initial_soc_ev
@@ -142,6 +150,7 @@ def test_ev_charging_v2(ev_model,battery_model,home_model,utility_model,initial_
 
     #Home demand is constant
     U_HOME = home_model.demand
+    df_h.iloc[:,1] = U_HOME
 
     for i in range(len(df_ev)-1):
         #Charging only if the current_soc < target_soc and plugged in at 2 AM
@@ -150,10 +159,11 @@ def test_ev_charging_v2(ev_model,battery_model,home_model,utility_model,initial_
         else:
             U_EV = 0
 
-        U_TOTAL = U_HOME + U_EV
+        U_TOTAL = U_HOME + U_EV #Will also incporate the battery when its pulling energy (U_CHARGER)
 
         #Discharging charger battery only if SOC_b>0
         if df_b.iloc[i,1] > 0:
+            #Output maximum if U_TOTAL is greater than max discharge of battery
             if U_TOTAL >= battery_model.p_d_bar_b:
                 P_discharge = battery_model.p_d_bar_b/battery_model.eta_d_b
             else:
@@ -162,10 +172,11 @@ def test_ev_charging_v2(ev_model,battery_model,home_model,utility_model,initial_
         else:
             P_discharge = 0
         
-        utility_model = U_TOTAL - P_discharge
+        utility_model.utility = U_TOTAL - P_discharge
 
         #Updating Battery SOC's
         df_ev.iloc[i+1,1] = df_ev.iloc[i,1]*ev_model.sys_d.A + (ev_model.sys_d.B)*U_EV
+        #In the future it would charge
         df_b.iloc[i+1,1] = df_b.iloc[i,1]*battery_model.sys_d.A - (battery_model.sys_d.B)*P_discharge
 
         #Updating Powers
@@ -181,19 +192,20 @@ def test_ev_charging_v2(ev_model,battery_model,home_model,utility_model,initial_
     plt.title('State of Charge (SoC) Over Time')
     plt.xlabel('Time (hours)')
     plt.ylabel('SoC (kWh)')
-    plt.ylim(0,np.max([np.max(df_ev.iloc[:, 1]), np.max(df_b.iloc[:, 1])])+2)
+    plt.ylim(np.min([np.min(df_ev.iloc[:, 1]), np.min(df_b.iloc[:, 1])])-2,np.max([np.max(df_ev.iloc[:, 1]), np.max(df_b.iloc[:, 1])])+2)
     plt.legend()
     plt.grid()
 
     # Plotting Charger Power and Battery Power on the same graph
     plt.subplot(2, 1, 2)  # 2 rows, 1 column, 1st subplot
-    plt.plot(df_ev.iloc[:, 0], df_ev.iloc[:, 2], label='EV Power (kW)', color='green')  # Time vs Charger Power
-    plt.plot(df_b.iloc[:, 0], df_b.iloc[:, 2], label='Charger Power (kW)', color='purple')  # Time vs Battery Power
-    plt.plot(df_u.iloc[:,0],df_u.iloc[:,1],label='Utility Power (kW)', color='black')
+    plt.plot(df_ev.iloc[:, 0], df_ev.iloc[:, 2], label='EV Power (kW)', color='green')  # Time vs Charger Power (kW)
+    plt.plot(df_b.iloc[:, 0], df_b.iloc[:, 2], label='Charger Power (kW)', color='purple')  # Time vs Battery Power (kW)
+    plt.plot(df_u.iloc[:,0],df_u.iloc[:,1],label='Utility Power (kW)', color='black') # Time vs Utility Power (kW)
+    plt.plot(df_h.iloc[:,0],df_h.iloc[:,1],label='Home Power (kW)', color='red') # Time vs Home Power (kW)
     plt.title('Power Over Time')
     plt.xlabel('Time (hours)')
     plt.ylabel('Power (kW)')
-    plt.ylim(np.min([np.min(df_ev.iloc[:, 2]), np.min(df_b.iloc[:, 2]),np.min(df_u.iloc[:, 1])])-2,np.max([np.max(df_ev.iloc[:, 2]), np.max(df_b.iloc[:, 2]),np.max(df_u.iloc[:, 1])])+2)
+    plt.ylim(np.min([np.min(df_ev.iloc[:, 2]), np.min(df_b.iloc[:, 2]),np.min(df_u.iloc[:, 1]),np.min(df_h.iloc[:, 1])])-2,np.max([np.max(df_ev.iloc[:, 2]), np.max(df_b.iloc[:, 2]),np.max(df_u.iloc[:, 1]),np.max(df_h.iloc[:, 1])])+2)
     plt.legend()
     plt.grid()
 

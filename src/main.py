@@ -44,60 +44,61 @@ def main():
         logging.info(f"  distance: {model_args.distance} km")
         print(f" ")
 
-        # Create instances of the models
-        dt = 1/60  # Example time step in hours
 
-        # Create BatteryModel instance
-        charger_model = BatteryModel(
-            dt=dt,
-            tau_b=model_args.tau_b,
-            eta_c_b=model_args.eta_c_b,
-            eta_d_b=model_args.eta_d_b,
-            x_bar_b=model_args.x_bar_b,
-            p_c_bar_b=model_args.p_c_bar_b,
-            p_d_bar_b=model_args.p_d_bar_b,
-            V_nom_b=model_args.V_nom_b,
-            P_rated_b=model_args.P_rated_b
-        )
+    # Create instances of the models
+    dt = 1/60  # Example time step in hours
 
-        # Create EVModel instance
-        ev_model = EVModel(
-            dt=dt,
-            tau_ev=model_args.tau_ev,
-            eta_c_ev=model_args.eta_c_ev,
-            eta_d_ev=model_args.eta_d_ev,
-            x_bar_ev=model_args.x_bar_ev,
-            p_c_bar_ev=model_args.p_c_bar_ev,
-            p_d_bar_ev=model_args.p_d_bar_ev,
-            V_nom_ev=model_args.V_nom_ev,
-            P_rated_ev=model_args.P_rated_ev,
-            alpha_ev=model_args.alpha_ev,
-            Temperature_ev=model_args.temperature_ev
-        )
+    # Create BatteryModel instance
+    charger_model = BatteryModel(
+        dt=dt,
+        tau_b=model_args.tau_b,
+        eta_c_b=model_args.eta_c_b,
+        eta_d_b=model_args.eta_d_b,
+        x_bar_b=model_args.x_bar_b,
+        p_c_bar_b=model_args.p_c_bar_b,
+        p_d_bar_b=model_args.p_d_bar_b,
+        V_nom_b=model_args.V_nom_b,
+        P_rated_b=model_args.P_rated_b
+    )
 
-        # Create Utility Model Instance
-        utility_model = UtilityModel(
-            dt = dt,
-            utility = 0
-        )
+    # Create EVModel instance
+    ev_model = EVModel(
+        dt=dt,
+        tau_ev=model_args.tau_ev,
+        eta_c_ev=model_args.eta_c_ev,
+        eta_d_ev=model_args.eta_d_ev,
+        x_bar_ev=model_args.x_bar_ev,
+        p_c_bar_ev=model_args.p_c_bar_ev,
+        p_d_bar_ev=model_args.p_d_bar_ev,
+        V_nom_ev=model_args.V_nom_ev,
+        P_rated_ev=model_args.P_rated_ev,
+        alpha_ev=model_args.alpha_ev,
+        Temperature_ev=model_args.temperature_ev
+    )
 
-        # Create Home Model Instance
-        home_model = HomeModel(
-            dt = dt,
-            demand = 0
-        )
+    # Create Utility Model Instance
+    utility_model = UtilityModel(
+        dt = dt,
+        utility = 0
+    )
 
-        # # Run basic model test
-        # test_ev_charging(ev_model, charger_model, initial_charge=0.5, target_charge=0.9)
+    # Create Home Model Instance
+    home_model = HomeModel(
+        dt = dt,
+        demand = 0
+    )
 
-        # Run test with Utility and Home
-        ## Case 1
-        home_model.demand = 15 #(kW), EV call for 6.0 (kW)
-        test_ev_charging_v2(ev_model,charger_model,home_model,utility_model,initial_charge=0.7, target_charge=0.8, ev_call = 6)
+    # # Run basic model test
+    # test_ev_charging(ev_model, charger_model, initial_charge=0.5, target_charge=0.9)
 
-        ## Case 2
-        home_model.demand = 8 #(kW), EV call for 13.5 (kW) [Max]
-        test_ev_charging_v2(ev_model,charger_model,home_model,utility_model,initial_charge=0.7, target_charge=0.8, ev_call = ev_model.p_c_bar_ev)
+    # Run test with Utility and Home
+    # ## Case 1
+    # home_model.demand = 15 #(kW), EV call for 6.0 (kW)
+    # test_ev_charging_v2(ev_model,charger_model,home_model,utility_model,initial_charge=0.7, target_charge=0.8, ev_call = 6)
+
+    ## Case 2
+    home_model.demand = 8 #(kW), EV call for 13.5 (kW) [Max]
+    test_ev_charging_v2(ev_model,charger_model,home_model,utility_model,initial_charge=0.5, target_charge=0.9, ev_call = ev_model.p_c_bar_ev)
 
 if __name__ == "__main__":
     main()
