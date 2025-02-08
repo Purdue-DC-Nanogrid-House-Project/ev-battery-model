@@ -93,12 +93,13 @@ def main():
 
     # Run test with Utility and Home
     # ## Case 1
-    # home_model.demand = 15 #(kW), EV call for 6.0 (kW)
-    # test_ev_charging_v2(ev_model,charger_model,home_model,utility_model,initial_charge=0.7, target_charge=0.8, ev_call = 6)
+    home_model.demand = 15 #(kW), EV call for 4.0 (kW)
+    test_ev_charging_v2(ev_model,charger_model,home_model,utility_model,initial_charge=0.7, target_charge=0.8, ev_call = 4)
 
     ## Case 2
-    home_model.demand = 8 #(kW), EV call for 13.5 (kW) [Max]
+    home_model.demand = 8 #(kW), EV call for 5.0 (kW) [Max]
     test_ev_charging_v2(ev_model,charger_model,home_model,utility_model,initial_charge=0.5, target_charge=0.9, ev_call = ev_model.p_c_bar_ev)
+
 
 if __name__ == "__main__":
     main()
