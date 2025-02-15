@@ -39,7 +39,7 @@ class SolarPanelModel:
         }
 
         # Define each segment
-        self.segment = [
+        self.segments = [
         {'tilt': 32, 'azimuth': 90, 'modules': 3, 'pdc0': 0.975e3},
         {'tilt': 50, 'azimuth': 180, 'modules': 3, 'pdc0': 0.975e3},
         {'tilt': 32, 'azimuth': 90, 'modules': 6, 'pdc0': 1.95e3},
@@ -50,24 +50,46 @@ class SolarPanelModel:
         self.site = Location(self.latitude, self.longitude)
 
         # Create solar panel model
-        self.mc = self.model_segment()
+        self.dc_power_total =  sum(self.model_segment(segment).dc for segment in self.segments)
+        self.ac_power_total =  sum(self.model_segment(segment).ac for segment in self.segments)
 
     # Function to model each segment
-    def model_segment(self):
+    def model_segment(self,segment):
         system = pvsystem.PVSystem(
-            surface_tilt=self.segment['tilt'],
-            surface_azimuth=self.segment['azimuth'],
+            surface_tilt=segment['tilt'],
+            surface_azimuth=segment['azimuth'],
             module_parameters=self.module_parameters,
             temperature_model_parameters=self.temperature_model_parameters,
             modules_per_string=1,
-            strings_per_inverter=self.segment['modules'],
+            strings_per_inverter=segment['modules'],
             inverter_parameters=self.inverter_parameters
         )
         # Create the model chain
         mc = modelchain.ModelChain(system, self.site, dc_model='pvwatts', ac_model='pvwatts', aoi_model='physical', spectral_model='no_loss')
+        # Debug: print the PVSystem parameters
+        #print(f"Modeling segment with parameters: {segment}")
+
+        # Run the model and print intermediate steps
+        try:
+            mc.run_model(self.weather)
+
+            # Debug: Check intermediate results
+            '''
+            print("MC Results:", mc.results)
+            print("DC Power:", mc.results.dc)
+            print("AC Power:", mc.results.ac)
+            '''
+            # Check if model chain has run successfully
+            if mc.results.ac is None:
+                print(f"ModelChain did not produce 'ac' for segment: {segment}")
+                return pd.Series(0, index=self.weather.index)  # return zero power if error
+
+            # Return AC power
+            return mc.results
+        except Exception as e:
+            print(f"Error modeling segment {segment}: {e}")
+            return pd.Series(0, index=self.weather.index)  # return zero power if error
         
-        return mc
-    
     # Function to load and filter weather data
     def load_weather_data(self,file_path, start_time, end_time):
         weather_data = pd.read_csv(file_path, parse_dates=[0])

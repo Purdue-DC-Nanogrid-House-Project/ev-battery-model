@@ -117,6 +117,8 @@ def main():
         longitude = model_args.longitude
     )
 
+    print(f"The total DC power panel is : {solar_panel_model.dc_power_total}")
+
     # # Run basic model test
     # test_ev_charging(ev_model, charger_model, initial_charge=0.5, target_charge=0.9)
 
