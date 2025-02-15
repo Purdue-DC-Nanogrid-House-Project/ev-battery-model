@@ -5,6 +5,7 @@ from ev_model import EVModel  # Import the EVModel class
 from battery_model import BatteryModel  # Import the BatteryModel class
 from utility_model import UtilityModel #Import UtilityModel class
 from home_model import HomeModel # Import UtilityModel Class
+from solar_panel_model import SolarPanelModel # Import SolarPanelModel Class
 
 
 from test_models import test_ev_charging,test_ev_charging_v2 # Import the test function
@@ -44,9 +45,22 @@ def main():
         logging.info(f"  distance: {model_args.distance} km")
         print(f" ")
 
-
+        # Log the parsed solar panel parameters
+        logging.info("Solar Panel Parameters:")
+        logging.info(f"  pdc0: {model_args.pdc0} W")
+        logging.info(f"  v_mp: {model_args.v_mp} V")
+        logging.info(f"  i_mp: {model_args.i_mp} A")
+        logging.info(f"  v_oc: {model_args.v_oc} V")
+        logging.info(f"  i_sc: {model_args.i_sc} A")
+        logging.info(f"  alpha_sc: {model_args.alpha_sc} A/C")
+        logging.info(f"  beta_oc: {model_args.beta_oc} V/C")
+        logging.info(f"  gamma_pdc: {model_args.gamma_pdc} 1/C")
+        logging.info(f"  latitude: {model_args.latitude} deg")
+        logging.info(f"  longitude: {model_args.longitude} deg")
+        print(f" ")
+        
     # Create instances of the models
-    dt = 1/60  # Example time step in hours
+    dt = 1 # Example time step in hours
 
     # Create BatteryModel instance
     charger_model = BatteryModel(
@@ -88,17 +102,32 @@ def main():
         demand = 0
     )
 
+    # Create Solar Panel Model Instance
+    solar_panel_model = SolarPanelModel(
+        dt = dt,
+        pdc0 = model_args.pdc0, 
+        v_mp = model_args.v_mp, 
+        i_mp= model_args.i_mp,
+        v_oc = model_args.v_oc,
+        i_sc = model_args.i_sc ,
+        alpha_sc = model_args.alpha_sc, 
+        beta_oc = model_args.beta_oc,
+        gamma_pdc = model_args.gamma_pdc, 
+        latitude = model_args.latitude,
+        longitude = model_args.longitude
+    )
+
     # # Run basic model test
     # test_ev_charging(ev_model, charger_model, initial_charge=0.5, target_charge=0.9)
 
-    # Run test with Utility and Home
-    # ## Case 1
-    home_model.demand = 15 #(kW), EV call for 4.0 (kW)
-    test_ev_charging_v2(ev_model,charger_model,home_model,utility_model,initial_charge=0.7, target_charge=0.8, ev_call = 4)
+    # # Run test with Utility and Home
+    # # ## Case 1
+    # home_model.demand = 15 #(kW), EV call for 4.0 (kW)
+    # test_ev_charging_v2(ev_model,charger_model,home_model,utility_model,initial_charge=0.7, target_charge=0.8, ev_call = 4)
 
-    ## Case 2
-    home_model.demand = 8 #(kW), EV call for 5.0 (kW) [Max]
-    test_ev_charging_v2(ev_model,charger_model,home_model,utility_model,initial_charge=0.5, target_charge=0.9, ev_call = ev_model.p_c_bar_ev)
+    # ## Case 2
+    # home_model.demand = 8 #(kW), EV call for 5.0 (kW) [Max]
+    # test_ev_charging_v2(ev_model,charger_model,home_model,utility_model,initial_charge=0.5, target_charge=0.9, ev_call = ev_model.p_c_bar_ev)
 
 
 if __name__ == "__main__":

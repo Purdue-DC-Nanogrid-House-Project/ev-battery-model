@@ -7,16 +7,18 @@ import matplotlib.dates as mdates
 import numpy as np
 
 class SolarPanelModel:
-    def __init__(self,dt):
+    def __init__(self,dt,pdc0,v_mp,i_mp,v_oc,i_sc,alpha_sc,beta_oc,gamma_pdc,latitude,longitude):
         self.dt=dt
-        self.pdc0 =25.6  # DC power at standard test conditions (W)
-        self.v_mp = 59.2 # Maximum power voltage (V)
-        self.i_mp=5.50 # Maximum power current (A)
-        self.v_oc = 70.9 # Open circuit voltage (V)
-        self.i_sc = 5.94  # Short circuit current (A)
-        self.alpha_sc = 3.27e-3,  # Temperature coefficient of Isc (A/C)
-        self.beta_oc = -0.17,  # Temperature coefficient of Voc (V/C)
-        self.gamma_pdc = -0.00258  # Power temperature coefficient (1/C)
+        self.pdc0 =pdc0  # DC power at standard test conditions (W)
+        self.v_mp = v_mp # Maximum power voltage (V)
+        self.i_mp=i_mp # Maximum power current (A)
+        self.v_oc = v_oc # Open circuit voltage (V)
+        self.i_sc = i_sc  # Short circuit current (A)
+        self.alpha_sc = alpha_sc,  # Temperature coefficient of Isc (A/C)
+        self.beta_oc = beta_oc,  # Temperature coefficient of Voc (V/C)
+        self.gamma_pdc = gamma_pdc  # Power temperature coefficient (1/C)
+        self.latitude = latitude # Latitude Co-ordinate of Solar Panel Location (deg)
+        self.longitude = longitude # Longitude Co-ordinate of Solar Panel Location (deg)
 
         # Temperature model parameters
         self.temperature_model_parameters = temperature.TEMPERATURE_MODEL_PARAMETERS['sapm']['open_rack_glass_glass']
@@ -30,8 +32,7 @@ class SolarPanelModel:
         ]
 
         # Define the location
-        latitude, longitude = 40.43093, -86.911617
-        self.site = Location(latitude, longitude)
+        self.site = Location(self.latitude, self.longitude)
         
 if __name__ == "__main__":
     dt = 1.0

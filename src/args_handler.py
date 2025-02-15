@@ -53,6 +53,19 @@ def args_handler():
         ## Use Paramaters
     parser.add_argument('--distance',type=check_pos, default=10, help='Distance Driven (km) [e.g. 30, 50]')
 
+
+    # Solar Panel
+    parser.add_argument('--pdc0', type=float, default= 25.6, help='DC power at standard test conditions (W)')
+    parser.add_argument('--v_mp', type=float, default= 59.2, help='Maximum power voltage (V)')
+    parser.add_argument('--i_mp', type=float, default= 5.50, help='Maximum power current (A)')
+    parser.add_argument('--v_oc', type=float, default= 70.9, help='Open circuit voltage (V)')
+    parser.add_argument('--i_sc', type=float, default= 5.94, help='Short circuit current (A)')
+    parser.add_argument('--alpha_sc', type=float, default= 3.27e-3, help='# Temperature coefficient of Isc (A/C)')
+    parser.add_argument('--beta_oc', type=float, default= -0.17, help='Temperature coefficient of Voc (V/C)')
+    parser.add_argument('--gamma_pdc', type=float, default= -0.00258, help='Power temperature coefficient (1/C)')
+    parser.add_argument('--latitude', type=float, default= 40.43093, help='Latitude co-ordinate of solar panel')
+    parser.add_argument('--longitude', type=float, default= -86.911617, help='Longitude co-ordinate of solar panel')
+
     # Display Parameters
     parser.add_argument('--check_params',type=bool, default=False, help='Check Parameters [True/False]')
 
