@@ -14,8 +14,8 @@ class SolarPanelModel:
 
         # Weather Parameters
         weather_path = 'data/HistoricalWeather.csv'
-        self.start_time = '2024-05-17 00:00:00'
-        self.end_time = '2024-05-18 00:00:00'
+        self.start_time = '2024-06-15 00:00:00'
+        self.end_time = '2024-06-16 00:00:00'
         self.weather = self.load_weather_data(weather_path,self.start_time,self.end_time)
 
         # Define module parameters for Panasonic VBHN325KA03

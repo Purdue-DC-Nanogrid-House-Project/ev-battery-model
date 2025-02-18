@@ -219,6 +219,56 @@ def test_solar_model(solar_model):
     plt.title(f'Total Solar PV Output on {solar_model.start_time} ')
     plt.show()
 
+def test_ev_charging_v3(ev_model,battery_model,home_model,utility_model,solar_model,initial_charge_pre, initial_charge_post,target_charge):
+    # Convert percentages to state of charge (SoC) in kWh for ev
+    initial_soc_ev_pre = initial_charge_pre * ev_model.x_bar_ev
+    initial_soc_ev_post = initial_charge_post * ev_model.x_bar_ev
+    target_soc_ev = target_charge * ev_model.x_bar_ev
+    # Convert percentage to state of charge (SoC) in Kwh for charger
+    initial_soc_b = 1.00 * battery_model.x_bar_b #assumes full charge
+
+    time_range = np.arange(0, 24, ev_model.dt)  # Time range for 24 hours
+    time_range= [f"{int(hour):02d}:00" for hour in time_range]
+
+    # Create DataFrame for EV
+    df_ev = pd.DataFrame({
+        'Time (hours)': time_range,
+        'SoC (kWh)': np.zeros(len(time_range)),  # Placeholder for SoC values
+        'EV_Battery Power (kW)': np.zeros(len(time_range))  # Placeholder for charger power values
+    })
+
+    # Create DataFrame for Battery
+    df_b = pd.DataFrame({
+        'Time (hours)': time_range,
+        'SoC (kWh)': np.zeros(len(time_range)),  # Placeholder for SoC values
+        'Charger_Battery Power (kW)': np.zeros(len(time_range))  # Placeholder for battery power values
+    })
+
+    # Create DataFrame for Utility
+    df_u = pd.DataFrame({
+        'Time (hours)': time_range,
+        'Utility Power (kW)': np.zeros(len(time_range))  # Placeholder for battery power values
+    })
+
+    # Create DataFrame for Utility
+    df_h = pd.DataFrame({
+        'Time (hours)': time_range,
+        'Utility Power (kW)': np.zeros(len(time_range))  # Placeholder for battery power values
+    })
+
+    # Create DataFrame for Solar
+    time_range = pd.to_datetime(solar_model.dc_power_total[0:-1].index)
+    time_range = (time_range).strftime('%H:%M')
+    solar_power = (solar_model.dc_power_total[0:-1].values)/1000
+    df_s = pd.DataFrame({
+        'Time (hours)': time_range,
+        'Solar Power (kW)': solar_power  # Placeholder for battery power values
+    })
+
+    
+
+
+
 if __name__ == "__main__":
     # This block is not needed since we will call the function from main.py
     pass

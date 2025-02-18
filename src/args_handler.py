@@ -55,7 +55,7 @@ def args_handler():
 
 
     # Solar Panel
-    parser.add_argument('--pdc0', type=float, default= 25.6, help='DC power at standard test conditions (W)')
+    parser.add_argument('--pdc0', type=float, default= 325.6, help='DC power at standard test conditions (W)')
     parser.add_argument('--v_mp', type=float, default= 59.2, help='Maximum power voltage (V)')
     parser.add_argument('--i_mp', type=float, default= 5.50, help='Maximum power current (A)')
     parser.add_argument('--v_oc', type=float, default= 70.9, help='Open circuit voltage (V)')

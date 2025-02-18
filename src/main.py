@@ -1,4 +1,5 @@
 import logging
+import pandas as pd
 import args_handler
 
 from ev_model import EVModel  # Import the EVModel class
@@ -8,7 +9,8 @@ from home_model import HomeModel # Import UtilityModel Class
 from solar_panel_model import SolarPanelModel # Import SolarPanelModel Class
 
 
-from test_models import test_ev_charging,test_ev_charging_v2,test_solar_model # Import the test function
+# Import the test function
+from test_models import test_ev_charging,test_ev_charging_v2,test_solar_model,test_ev_charging_v3 
 
 # Set up logging configuration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -103,7 +105,7 @@ def main():
     )
 
     # Create Solar Panel Model Instance
-    solar_panel_model = SolarPanelModel(
+    solar_model = SolarPanelModel(
         dt = dt,
         pdc0 = model_args.pdc0, 
         v_mp = model_args.v_mp, 
@@ -117,8 +119,16 @@ def main():
         longitude = model_args.longitude
     )
 
-    print(f"The total DC power panel is : {solar_panel_model.dc_power_total}")
-    
+    # Print Solar results for example
+    # time_range = pd.to_datetime(solar_model.dc_power_total[0:-1].index)
+    # time_range = (time_range).strftime('%H:%M')
+    # power = (solar_model.dc_power_total[0:-1].values)/1000
+    # # Creating a DataFrame with 'Time (hours)' and 'Power'
+    # df_solar_results = pd.DataFrame({
+    #     'Time (hours)': time_range,
+    #     'Solar Power (kW)': power
+    # })
+
     # # Run basic model test
     # test_ev_charging(ev_model, charger_model, initial_charge=0.5, target_charge=0.9)
 
@@ -131,8 +141,12 @@ def main():
     # home_model.demand = 8 #(kW), EV call for 5.0 (kW) [Max]
     # test_ev_charging_v2(ev_model,charger_model,home_model,utility_model,initial_charge=0.5, target_charge=0.9, ev_call = ev_model.p_c_bar_ev)
 
-    #Plot Solar Output on chosen day
-    test_solar_model(solar_panel_model)
+    # #Plot Solar Output on chosen day
+    # test_solar_model(solar_model)
+
+    # Run test case with Utility, Home, and Solar
+    test_ev_charging_v3(ev_model,charger_model,home_model,utility_model,solar_model,initial_charge_pre=0.8, initial_charge_post=0.6, target_charge= 1.0)
+
 
 if __name__ == "__main__":
     main()

@@ -22,6 +22,9 @@ class EVModel:
         # State-space representation
         self.sys_d = self.ev_model()
 
+        # Variable for connected status
+        self.plugged = True
+
     def ev_model(self):
         A_ev = np.array([[0]])  # State matrix (1x1 matrix)
         B_ev = np.array([[self.eta_c_ev]])  # Input matrix (1x1 matrix)
