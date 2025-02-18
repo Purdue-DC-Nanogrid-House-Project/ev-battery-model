@@ -211,7 +211,13 @@ def test_ev_charging_v2(ev_model,battery_model,home_model,utility_model,initial_
 
     plt.tight_layout()  # Adjust layout to prevent overlap
     plt.show()
-    
+
+def test_solar_model(solar_model):
+    solar_model.dc_power_total.plot()
+    plt.xlabel('Time')
+    plt.ylabel('Total DC Power (W)')
+    plt.title(f'Total Solar PV Output on {solar_model.start_time} ')
+    plt.show()
 
 if __name__ == "__main__":
     # This block is not needed since we will call the function from main.py

@@ -8,7 +8,7 @@ from home_model import HomeModel # Import UtilityModel Class
 from solar_panel_model import SolarPanelModel # Import SolarPanelModel Class
 
 
-from test_models import test_ev_charging,test_ev_charging_v2 # Import the test function
+from test_models import test_ev_charging,test_ev_charging_v2,test_solar_model # Import the test function
 
 # Set up logging configuration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -118,7 +118,7 @@ def main():
     )
 
     print(f"The total DC power panel is : {solar_panel_model.dc_power_total}")
-
+    
     # # Run basic model test
     # test_ev_charging(ev_model, charger_model, initial_charge=0.5, target_charge=0.9)
 
@@ -131,6 +131,8 @@ def main():
     # home_model.demand = 8 #(kW), EV call for 5.0 (kW) [Max]
     # test_ev_charging_v2(ev_model,charger_model,home_model,utility_model,initial_charge=0.5, target_charge=0.9, ev_call = ev_model.p_c_bar_ev)
 
+    #Plot Solar Output on chosen day
+    test_solar_model(solar_panel_model)
 
 if __name__ == "__main__":
     main()
