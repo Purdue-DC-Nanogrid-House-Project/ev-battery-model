@@ -62,7 +62,7 @@ def main():
         print(f" ")
         
     # Create instances of the models
-    dt = 1 # Example time step in hours
+    dt = 1/60 # Example time step in hours
 
     # Create BatteryModel instance
     charger_model = BatteryModel(
@@ -141,10 +141,11 @@ def main():
     # home_model.demand = 8 #(kW), EV call for 5.0 (kW) [Max]
     # test_ev_charging_v2(ev_model,charger_model,home_model,utility_model,initial_charge=0.5, target_charge=0.9, ev_call = ev_model.p_c_bar_ev)
 
-    # #Plot Solar Output on chosen day
-    # test_solar_model(solar_model)
+    #Plot Solar Output on chosen day
+    # test_solar_model(solar_model,dt)
 
     # Run test case with Utility, Home, and Solar
+    home_model.demand = 15 #(kW), EV call for 5.0 (kW) [Max]
     test_ev_charging_v3(ev_model,charger_model,home_model,utility_model,solar_model,initial_charge_pre=0.8, initial_charge_post=0.6, target_charge= 1.0)
 
 
