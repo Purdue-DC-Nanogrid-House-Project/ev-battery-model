@@ -9,7 +9,7 @@ class Optimizer:
         self.x0 = x0
         self.K = 24/dt # determines number of entries
 
-    def optimization_sub_battery(optimizer):
+    def evbm_optimization(optimizer):
         # Define variables
         x_b = cp.Variable((1, optimizer.K+1))  # Battery state of charge
         P_bat = cp.Variable((optimizer.K, 1))  # Battery power
