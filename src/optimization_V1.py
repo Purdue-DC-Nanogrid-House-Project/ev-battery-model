@@ -7,7 +7,7 @@ class Optimizer:
         self.home_model = home_model
         self.dt = dt
         self.x0 = x0
-        self.optimizer.K = 24/dt # determines number of entries
+        self.K = 24/dt # determines number of entries
 
     def optimization_sub_battery(optimizer):
         # Define variables
@@ -19,7 +19,7 @@ class Optimizer:
         constraints = [
             P_util == optimizer.home_model.demand + P_bat,
             x_b[0, 0] == optimizer.x0,
-            x_b[:, 1:optimizer.K+1] == cp.multiply(x_b[:, :optimizer.K],optimizer.battery_model.sys_discrete.A) + cp.multiply(P_bat.T,self.battery_model.sys_discrete.b),
+            x_b[:, 1:optimizer.K+1] == cp.multiply(x_b[:, :optimizer.K],optimizer.battery_model.sys_discrete.A) + cp.multiply(P_bat.T,optimizer.battery_model.sys_discrete.B),
             P_bat <= optimizer.battery_model.p_c_bar_b,
             P_bat >= -optimizer.battery_model.p_d_bar_b,
 
