@@ -7,11 +7,10 @@ from battery_model import BatteryModel  # Import the BatteryModel class
 from utility_model import UtilityModel #Import UtilityModel class
 from home_model import HomeModel # Import UtilityModel Class
 from solar_panel_model import SolarPanelModel # Import SolarPanelModel Class
-from optimization_V1  import Optimizer #Import Optimizer Class
+from optimizer  import Optimizer #Import Optimizer Class
 
 # Import the test function
-from test_models import test_ev_charging,test_ev_charging_v2,test_solar_model,test_ev_charging_v3 
-from optimization_V1 import evbm_optimization
+from test_models import test_ev_charging,test_ev_charging_v2,test_solar_model,test_ev_charging_v3,evbm_optimization_v1,plot_results 
 
 # Set up logging configuration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -121,6 +120,12 @@ def main():
     )
 
     # Create Optimizer Instance
+    optimizer = Optimizer(
+        dt = dt,
+        battery_model = charger_model,
+        home_model= home_model,
+        x0 = 0.5
+    )
 
     # Print Solar results for example
     # time_range = pd.to_datetime(solar_model.dc_power_total[0:-1].index)
@@ -151,6 +156,11 @@ def main():
     #home_model.demand = 15 #(kW), EV call for 5.0 (kW) [Max]
     #test_ev_charging_v3(ev_model,charger_model,home_model,utility_model,solar_model,initial_charge_pre=0.8, initial_charge_post=0.6, target_charge= 1.0)
 
+    # Run test case of optimizer with just Utility
+    home_model.demand = 15 #(kW)
+    [x_b, P_bat, P_util] = evbm_optimization_v1(optimizer)
+    plot_results(x_b, P_bat, P_util,dt)
+    
 
 if __name__ == "__main__":
     main()
