@@ -1,7 +1,8 @@
 
 class Optimizer:
-    def __init__(self, battery_model, home_model,x0,dt):
+    def __init__(self, battery_model, home_model,solar_model,x0,dt):
         self.battery_model = battery_model
+        self.solar_model = solar_model
         self.home_model = home_model
         self.dt = dt
         self.x0 = x0

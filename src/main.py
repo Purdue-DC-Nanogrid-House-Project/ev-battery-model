@@ -124,6 +124,7 @@ def main():
         dt = dt,
         battery_model = charger_model,
         home_model= home_model,
+        solar_model= solar_model,
         x0 = 0.5
     )
 
@@ -150,7 +151,7 @@ def main():
     # test_ev_charging_v2(ev_model,charger_model,home_model,utility_model,initial_charge=0.5, target_charge=0.9, ev_call = ev_model.p_c_bar_ev)
 
     #Plot Solar Output on chosen day
-    # test_solar_model(solar_model,dt)
+    #test_solar_model(solar_model,dt)
 
     # Run test case with Utility, Home, and Solar
     #home_model.demand = 15 #(kW), EV call for 5.0 (kW) [Max]
@@ -158,8 +159,8 @@ def main():
 
     # Run test case of optimizer with just Utility
     home_model.demand = 15 #(kW)
-    [x_b, P_bat, P_util] = evbm_optimization_v1(optimizer)
-    plot_results(x_b, P_bat, P_util,dt)
+    [x_b, P_bat, P_util,P_sol] = evbm_optimization_v1(optimizer)
+    plot_results(x_b, P_bat, P_util,P_sol,home_model.demand,dt)
     
 
 if __name__ == "__main__":
