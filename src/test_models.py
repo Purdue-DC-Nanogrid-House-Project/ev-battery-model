@@ -396,6 +396,7 @@ def evbm_optimization_v1(optimizer):
     time_range = np.arange(0, 24, optimizer.dt)  # Time range for 24 hours
     solar_power = (optimizer.solar_model.dc_power_total[0:-1].values)/1000
     P_sol = np.interp(time_range, np.linspace(0, 23, len(solar_power)), solar_power).reshape(-1, 1)
+    c_elec = np.where((time_range >= 14) & (time_range <= 20), 0.2573, 0.0825).reshape(-1, 1)
 
     # Check the shapes after squeezing
     # print("x_b shape:", x_b.shape)
@@ -410,6 +411,7 @@ def evbm_optimization_v1(optimizer):
         x_b[:, 1:optimizer.K+1] == cp.multiply(x_b[:, :optimizer.K],optimizer.battery_model.sys_d.A) + cp.multiply(P_bat.T,optimizer.battery_model.sys_d.B),
         P_bat <= optimizer.battery_model.p_c_bar_b,
         P_bat >= -optimizer.battery_model.p_d_bar_b,
+        x_b[0, optimizer.K] == x_b[0, 0],
 
         #Physical Limits
         x_b >= 0.1,
@@ -423,7 +425,7 @@ def evbm_optimization_v1(optimizer):
             10 * cp.norm(optimizer.dt * (P_util - 0), 2) +   # (1) Minimizing utility power usage variations
 
             # Minimizing electricity cost by minimizing P_util
-            #optimizer.dt * cp.abs(P_util) +                  # (2) Minimizing electricity pulled while penalizing feeding bacoptimizer.K to the grid
+            optimizer.dt * cp.maximum(0, cp.multiply(c_elec, P_util)) +  # (2) Cost minimization    
 
             #Soft Preferences
             optimizer.dt * cp.maximum(0, x_b[:, :optimizer.K] - 0.8) + # (3) Penalizing exceeding max SOC (80%
