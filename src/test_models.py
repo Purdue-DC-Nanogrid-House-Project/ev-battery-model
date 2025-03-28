@@ -389,7 +389,9 @@ def test_ev_charging_v3(ev_model,battery_model,home_model,utility_model,solar_mo
 def evbm_optimization_v1(optimizer):
     # Define variables
     x_b = cp.Variable((1, optimizer.K+1))  # Battery state of charge
+    x_ev = cp.Variable((1, optimizer.K+1))
     P_bat = cp.Variable((optimizer.K, 1))  # Battery power
+    P_ev = cp.Variable((optimizer.K, 1))
     P_util = cp.Variable((optimizer.K, 1))  # Utility power
 
     # Define knowns
@@ -406,16 +408,31 @@ def evbm_optimization_v1(optimizer):
 
     # Constraints
     constraints = [
-        P_util == optimizer.home_model.demand + P_bat - P_sol[:optimizer.K],
-        x_b[0, 0] == optimizer.x0,
+        P_util == optimizer.home_model.demand + P_bat + P_ev - P_sol[:optimizer.K],
+
+        #EV Constrains
+        x_ev[0, 0] == optimizer.x0_ev,
+        x_ev[:, 1:optimizer.K+1] == cp.multiply(x_ev[:, :optimizer.K],optimizer.ev_model.sys_d.A) + cp.multiply(P_ev.T,optimizer.ev_model.sys_d.B),
+            #Power Constraints
+        P_ev <= optimizer.ev_model.p_c_bar_ev,
+        P_ev >= -optimizer.ev_model.p_d_bar_ev,
+        x_ev[0, optimizer.K] == x_ev[0, 0],
+            #Physical Limits
+        x_ev >= 0.1,
+        x_ev <= 0.9,
+
+        #Charger Constraints
+        x_b[0, 0] == optimizer.x0_b,
         x_b[:, 1:optimizer.K+1] == cp.multiply(x_b[:, :optimizer.K],optimizer.battery_model.sys_d.A) + cp.multiply(P_bat.T,optimizer.battery_model.sys_d.B),
+            #Power Constraints
         P_bat <= optimizer.battery_model.p_c_bar_b,
         P_bat >= -optimizer.battery_model.p_d_bar_b,
         x_b[0, optimizer.K] == x_b[0, 0],
-
-        #Physical Limits
+            #Physical Limits
         x_b >= 0.1,
         x_b <= 0.9
+
+
     ]
 
     # Objective function
@@ -437,13 +454,15 @@ def evbm_optimization_v1(optimizer):
     problem = cp.Problem(objective, constraints)
     problem.solve()
 
-    return x_b.value, P_bat.value, P_util.value, P_sol
+    return x_b.value,x_ev.value,P_bat.value,P_ev.value,P_util.value, P_sol
 
-def plot_results(x_b, P_bat, P_util, P_sol, demand, dt):
+def plot_results(x_b,x_ev, P_bat,P_ev,P_util, P_sol, demand, dt):
     # Convert arrays to 1D
     P_util = np.squeeze(P_util)
     x_b = np.squeeze(x_b)[:-1]  # Trim last value of x_b to match other arrays
+    x_ev = np.squeeze(x_ev)[:-1]
     P_bat = np.squeeze(P_bat)
+    P_ev = np.squeeze(P_ev)
     P_sol = np.squeeze(P_sol)
     
     # Create time vector
@@ -456,23 +475,25 @@ def plot_results(x_b, P_bat, P_util, P_sol, demand, dt):
         P_demand = np.squeeze(demand[:len(P_util)])  # Match length
 
     # Compute Power Conservation Variable
-    P_tot = -P_util + P_demand + P_bat - P_sol  # Power balance check
+    P_tot = -P_util + P_demand + P_bat - P_sol + P_ev  # Power balance check
 
     # Check shapes
     print("Time shape:", time.shape)
     print("x_b shape:", x_b.shape)
     print("P_util shape:", P_util.shape)
     print("P_bat shape:", P_bat.shape)
+    print("P_ev shape:", P_ev.shape)
     print("P_sol shape:", P_sol.shape)
     print("P_demand shape:", P_demand.shape)
     print("P_tot shape:", P_tot.shape)  # Ensure shape consistency
 
     # Plot Battery State of Charge (SOC)
     plt.figure(figsize=(10, 6))
-    plt.plot(time, x_b, label="State of Charge (SOC)", color="r", linestyle='-', linewidth=2)
+    plt.plot(time, x_b, label="State of Charge (SOC Battery", color="r", linestyle='-', linewidth=2)
+    plt.plot(time, x_ev, label="State of Charge (SOC) EV", color="grey", linestyle='-', linewidth=2)
     plt.xlabel("Time (hours)")
     plt.ylabel("State of Charge (%)")
-    plt.title("Battery State of Charge (SOC) over Time")
+    plt.title("Battery and EV State of Charge (SOC) over Time")
     plt.grid(True)
     plt.legend(loc="best")
     plt.tight_layout()
@@ -481,13 +502,14 @@ def plot_results(x_b, P_bat, P_util, P_sol, demand, dt):
     plt.figure(figsize=(10, 6))
     plt.plot(time, P_util, label="Utility Power (P_util)", color="b", linestyle='-', linewidth=2)
     plt.plot(time, P_bat, label="Battery Power (P_bat)", color="g", linestyle='-', linewidth=2)
+    plt.plot(time, P_ev, label="EV Power (P_ev)", color="grey", linestyle='-', linewidth=2)
     plt.plot(time, P_sol, label="Solar Power (P_sol)", color="orange", linestyle='-', linewidth=2)
     plt.plot(time, P_demand, label="Demand", color="purple", linestyle='-', linewidth=2)
     plt.plot(time, P_tot, label="Power Conservation (P_tot)", color="red", linestyle='-', linewidth=2)
 
     plt.xlabel("Time (hours)")
     plt.ylabel("Power (kW)")
-    plt.title("Utility Power, Battery Power, Solar Power, Demand, and Power Conservation")
+    plt.title("Utility Power, Battery Power,EV_Power,Solar Power, Demand, and Power Conservation")
     plt.grid(True)
     plt.legend(loc="best")
     plt.tight_layout()

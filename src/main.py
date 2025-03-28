@@ -123,9 +123,11 @@ def main():
     optimizer = Optimizer(
         dt = dt,
         battery_model = charger_model,
+        ev_model = ev_model,
         home_model= home_model,
         solar_model= solar_model,
-        x0 = 0.5
+        x0_b = 0.5,
+        x0_ev = 0.5
     )
 
     # Print Solar results for example
@@ -159,8 +161,8 @@ def main():
 
     # Run test case of optimizer with just Utility
     home_model.demand = 15 #(kW)
-    [x_b, P_bat, P_util,P_sol] = evbm_optimization_v1(optimizer)
-    plot_results(x_b, P_bat, P_util,P_sol,home_model.demand,dt)
+    [x_b,x_ev,P_bat,P_ev,P_util, P_sol] = evbm_optimization_v1(optimizer)
+    plot_results(x_b,x_ev,P_bat,P_ev,P_util,P_sol,home_model.demand,dt)
     
 
 if __name__ == "__main__":
