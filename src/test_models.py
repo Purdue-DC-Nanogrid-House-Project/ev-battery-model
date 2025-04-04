@@ -399,16 +399,18 @@ def evbm_optimization_v1(optimizer):
     solar_power = (optimizer.solar_model.dc_power_total[0:-1].values)/1000
     P_sol = np.interp(time_range, np.linspace(0, 23, len(solar_power)), solar_power).reshape(-1, 1)
     c_elec = np.where((time_range >= 14) & (time_range <= 20), 0.2573, 0.0825).reshape(-1, 1)
+    P_dem = optimizer.home_model.demand.to_numpy().reshape(-1, 1)
 
     # Check the shapes after squeezing
     # print("x_b shape:", x_b.shape)
     # print("P_util shape:", P_util.shape)
     # print("P_bat shape:", P_bat.shape)
-    # print("P_sol shape", P_sol.shape)
+    # print("P_sol shape:", P_sol.shape)
+    # print("P_dem shape:",P_dem.shape)
 
     # Constraints
     constraints = [
-        P_util == optimizer.home_model.demand + P_bat + P_ev - P_sol[:optimizer.K],
+        P_util == P_dem + P_bat + P_ev - P_sol[:optimizer.K],
 
         #EV Constrains
         x_ev[0, 0] == optimizer.x0_ev,
@@ -454,9 +456,9 @@ def evbm_optimization_v1(optimizer):
     problem = cp.Problem(objective, constraints)
     problem.solve()
 
-    return x_b.value,x_ev.value,P_bat.value,P_ev.value,P_util.value, P_sol
+    return x_b.value,x_ev.value,P_bat.value,P_ev.value,P_util.value, P_sol,P_dem
 
-def plot_results(x_b,x_ev, P_bat,P_ev,P_util, P_sol, demand, dt):
+def plot_results(x_b,x_ev, P_bat,P_ev,P_util, P_sol, P_dem, dt):
     # Convert arrays to 1D
     P_util = np.squeeze(P_util)
     x_b = np.squeeze(x_b)[:-1]  # Trim last value of x_b to match other arrays
@@ -464,18 +466,12 @@ def plot_results(x_b,x_ev, P_bat,P_ev,P_util, P_sol, demand, dt):
     P_bat = np.squeeze(P_bat)
     P_ev = np.squeeze(P_ev)
     P_sol = np.squeeze(P_sol)
+    P_dem = np.squeeze(P_dem)
     
     # Create time vector
     time = np.arange(0, len(P_util) * dt, dt)
-    
-    # Ensure demand is correctly formatted (assuming it's a scalar or (K,1))
-    if np.isscalar(demand):
-        P_demand = np.full_like(P_util, demand)  # Convert scalar to array of same length
-    else:
-        P_demand = np.squeeze(demand[:len(P_util)])  # Match length
-
     # Compute Power Conservation Variable
-    P_tot = -P_util + P_demand + P_bat - P_sol + P_ev  # Power balance check
+    P_tot = -P_util + P_dem + P_bat - P_sol + P_ev  # Power balance check
 
     # Check shapes
     print("Time shape:", time.shape)
@@ -484,7 +480,7 @@ def plot_results(x_b,x_ev, P_bat,P_ev,P_util, P_sol, demand, dt):
     print("P_bat shape:", P_bat.shape)
     print("P_ev shape:", P_ev.shape)
     print("P_sol shape:", P_sol.shape)
-    print("P_demand shape:", P_demand.shape)
+    print("P_dem shape:", P_dem.shape)
     print("P_tot shape:", P_tot.shape)  # Ensure shape consistency
 
     # Plot Battery State of Charge (SOC)
@@ -504,7 +500,7 @@ def plot_results(x_b,x_ev, P_bat,P_ev,P_util, P_sol, demand, dt):
     plt.plot(time, P_bat, label="Battery Power (P_bat)", color="g", linestyle='-', linewidth=2)
     plt.plot(time, P_ev, label="EV Power (P_ev)", color="grey", linestyle='-', linewidth=2)
     plt.plot(time, P_sol, label="Solar Power (P_sol)", color="orange", linestyle='-', linewidth=2)
-    plt.plot(time, P_demand, label="Demand", color="purple", linestyle='-', linewidth=2)
+    plt.plot(time, P_dem, label="Demand", color="purple", linestyle='-', linewidth=2)
     plt.plot(time, P_tot, label="Power Conservation (P_tot)", color="red", linestyle='-', linewidth=2)
 
     plt.xlabel("Time (hours)")

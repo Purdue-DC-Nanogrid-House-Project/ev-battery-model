@@ -100,8 +100,7 @@ def main():
 
     # Create Home Model Instance
     home_model = HomeModel(
-        dt = dt,
-        demand = 0
+        dt = dt
     )
 
     # Create Solar Panel Model Instance
@@ -159,10 +158,9 @@ def main():
     #home_model.demand = 15 #(kW), EV call for 5.0 (kW) [Max]
     #test_ev_charging_v3(ev_model,charger_model,home_model,utility_model,solar_model,initial_charge_pre=0.8, initial_charge_post=0.6, target_charge= 1.0)
 
-    # Run test case of optimizer with just Utility
-    home_model.demand = 15 #(kW)
-    [x_b,x_ev,P_bat,P_ev,P_util, P_sol] = evbm_optimization_v1(optimizer)
-    plot_results(x_b,x_ev,P_bat,P_ev,P_util,P_sol,home_model.demand,dt)
+    # # Run test case of optimizer with just Utility
+    [x_b,x_ev,P_bat,P_ev,P_util, P_sol,P_dem] = evbm_optimization_v1(optimizer)
+    plot_results(x_b,x_ev,P_bat,P_ev,P_util,P_sol,P_dem,dt)
     
 
 if __name__ == "__main__":
