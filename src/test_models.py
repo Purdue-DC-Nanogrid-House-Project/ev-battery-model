@@ -441,7 +441,8 @@ def evbm_optimization_v1(optimizer):
     objective = cp.Minimize(
         cp.sum(
             # Uses L2 euclidean smoothing to ensure the are no sudden variations in Utility pull
-            10 * cp.norm(optimizer.dt * (P_util - 0), 2) +   # (1) Minimizing utility power usage variations
+            1000 * cp.norm(optimizer.dt * (0-P_util), 1) +   # (1) Minimizing utility power usage variations
+            10 * cp.norm(optimizer.dt * (P_util-0), 1)+   # (1) Minimizing utility power usage variations
 
             # Minimizing electricity cost by minimizing P_util
             optimizer.dt * cp.maximum(0, cp.multiply(c_elec, P_util)) +  # (2) Cost minimization    
