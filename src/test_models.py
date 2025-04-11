@@ -441,8 +441,17 @@ def evbm_optimization_v1(optimizer):
     objective = cp.Minimize(
         cp.sum(
             # Uses L2 euclidean smoothing to ensure the are no sudden variations in Utility pull
-            1000 * cp.norm(optimizer.dt * (0-P_util), 1) +   # (1) Minimizing utility power usage variations
-            10 * cp.norm(optimizer.dt * (P_util-0), 1)+   # (1) Minimizing utility power usage variations
+            10 * cp.norm(optimizer.dt * (0-P_util), 2) +   # (1) Minimizing utility power usage variations
+
+            # Uses L2 euclidean smoothing to ensure no sudden variations in battery/ev pull
+            cp.norm(optimizer.dt * (0-P_bat), 2)+
+            cp.norm(optimizer.dt * (0-P_ev), 2)+
+
+            # Ensures to minimize negative feed back
+            1000*cp.maximum(0,-P_util)+
+
+            # Ensures to mimize positive feed back
+            1000*cp.maximum(0,P_util)+
 
             # Minimizing electricity cost by minimizing P_util
             optimizer.dt * cp.maximum(0, cp.multiply(c_elec, P_util)) +  # (2) Cost minimization    
