@@ -493,6 +493,13 @@ def plot_results(x_b,x_ev, P_bat,P_ev,P_util, P_sol, P_dem, dt):
     print("P_dem shape:", P_dem.shape)
     print("P_tot shape:", P_tot.shape)  # Ensure shape consistency
 
+    # Compute cumulative energy (kWh)
+    E_util = np.cumsum(P_util) * dt
+    E_bat = np.cumsum(P_bat) * dt
+    E_ev = np.cumsum(P_ev) * dt
+    E_sol = np.cumsum(P_sol) * dt
+    E_dem = np.cumsum(P_dem) * dt
+
     # Plot Battery State of Charge (SOC)
     plt.figure(figsize=(10, 6))
     plt.plot(time, x_b, label="State of Charge (SOC Battery", color="r", linestyle='-', linewidth=2)
@@ -512,10 +519,23 @@ def plot_results(x_b,x_ev, P_bat,P_ev,P_util, P_sol, P_dem, dt):
     plt.plot(time, P_sol, label="Solar Power (P_sol)", color="orange", linestyle='-', linewidth=2)
     plt.plot(time, P_dem, label="Demand", color="purple", linestyle='-', linewidth=2)
     plt.plot(time, P_tot, label="Power Conservation (P_tot)", color="red", linestyle='-', linewidth=2)
-
     plt.xlabel("Time (hours)")
     plt.ylabel("Power (kW)")
     plt.title("Utility Power, Battery Power,EV_Power,Solar Power, Demand, and Power Conservation")
+    plt.grid(True)
+    plt.legend(loc="best")
+    plt.tight_layout()
+
+     # Plot Cumulative Energy
+    plt.figure(figsize=(10, 6))
+    plt.plot(time, E_util, label="Cumulative Utility Energy", color="b", linestyle='-')
+    plt.plot(time, E_bat, label="Cumulative Battery Energy", color="g", linestyle='-')
+    plt.plot(time, E_ev, label="Cumulative EV Energy", color="grey", linestyle='-')
+    plt.plot(time, E_sol, label="Cumulative Solar Energy", color="orange", linestyle='-')
+    plt.plot(time, E_dem, label="Cumulative Demand Energy", color="purple", linestyle='-')
+    plt.xlabel("Time (hours)")
+    plt.ylabel("Cumulative Energy (kWh)")
+    plt.title("Cumulative Energy for Each Power Flow")
     plt.grid(True)
     plt.legend(loc="best")
     plt.tight_layout()
