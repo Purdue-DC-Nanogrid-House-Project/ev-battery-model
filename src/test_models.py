@@ -526,19 +526,30 @@ def plot_results(x_b,x_ev, P_bat,P_ev,P_util, P_sol, P_dem, dt):
     plt.legend(loc="best")
     plt.tight_layout()
 
-     # Plot Cumulative Energy
-    plt.figure(figsize=(10, 6))
-    plt.plot(time, E_util, label="Cumulative Utility Energy", color="b", linestyle='-')
-    plt.plot(time, E_bat, label="Cumulative Battery Energy", color="g", linestyle='-')
-    plt.plot(time, E_ev, label="Cumulative EV Energy", color="grey", linestyle='-')
-    plt.plot(time, E_sol, label="Cumulative Solar Energy", color="orange", linestyle='-')
-    plt.plot(time, E_dem, label="Cumulative Demand Energy", color="purple", linestyle='-')
-    plt.xlabel("Time (hours)")
-    plt.ylabel("Cumulative Energy (kWh)")
-    plt.title("Cumulative Energy for Each Power Flow")
-    plt.grid(True)
-    plt.legend(loc="best")
-    plt.tight_layout()
+    E_grid_to_home = np.sum(P_util[P_util > 0]) * dt
+    E_home_demand = np.sum(P_dem) * dt
+    E_solar_generated = np.sum(P_sol) * dt
+    E_fed_to_grid = -np.sum(P_util[P_util < 0]) * dt  # negative values, so negate
+
+    print("\n=== Energy Flow Summary (kWh) ===")
+    print(f"1. Grid supplied to Home/Battery: {E_grid_to_home:.2f} kWh")
+    print(f"2. Total Home Demand:             {E_home_demand:.2f} kWh")
+    print(f"3. Solar Energy Produced:         {E_solar_generated:.2f} kWh")
+    print(f"4. Energy Fed Back to Grid:       {E_fed_to_grid:.2f} kWh")
+
+    #  # Plot Cumulative Energy
+    # plt.figure(figsize=(10, 6))
+    # plt.plot(time, E_util, label="Cumulative Utility Energy", color="b", linestyle='-')
+    # plt.plot(time, E_bat, label="Cumulative Battery Energy", color="g", linestyle='-')
+    # plt.plot(time, E_ev, label="Cumulative EV Energy", color="grey", linestyle='-')
+    # plt.plot(time, E_sol, label="Cumulative Solar Energy", color="orange", linestyle='-')
+    # plt.plot(time, E_dem, label="Cumulative Demand Energy", color="purple", linestyle='-')
+    # plt.xlabel("Time (hours)")
+    # plt.ylabel("Cumulative Energy (kWh)")
+    # plt.title("Cumulative Energy for Each Power Flow")
+    # plt.grid(True)
+    # plt.legend(loc="best")
+    # plt.tight_layout()
 
     # Show plot
     plt.show()
