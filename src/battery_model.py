@@ -18,10 +18,28 @@ class BatteryModel:
 
         # State-space representation
         self.sys_d = self.battery_model()
+        self.sys_d2 = self.battery_model_v2()
+        print(f"Old Model:",self.sys_d)
+        print(f"New Model:",self.sys_d2)
 
     def battery_model(self):
         A_bat = np.array([[0]])  # State matrix (1x1 matrix)
         B_bat = np.array([[self.eta_c_b]])  # Input matrix (1x1 matrix)
+        C_bat = np.array([[1]])  # Output matrix (1x1 matrix)
+        D_bat = np.array([[0]])  # Feedforward matrix (1x1 matrix)
+
+        # Continuous-time state-space representation
+        sys_continuous = control.ss(A_bat, B_bat, C_bat, D_bat)
+
+        # Convert to discrete-time state-space representation
+        sys_discrete = control.sample_system(sys_continuous,self.dt, method='zoh')
+
+        return sys_discrete
+    
+    def battery_model_v2(self):
+        a = np.exp(-self.dt / self.tau_b)
+        A_bat = np.array([[a]])  # State matrix (1x1 matrix)
+        B_bat = np.array([[(1 - a) * self.tau_b]])  # Input matrix (1x1 matrix)
         C_bat = np.array([[1]])  # Output matrix (1x1 matrix)
         D_bat = np.array([[0]])  # Feedforward matrix (1x1 matrix)
 
