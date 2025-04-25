@@ -20,7 +20,7 @@ class EVModel:
         self.Temperature_ev = Temperature_ev
 
         # State-space representation
-        self.sys_d = self.ev_model()
+        self.sys_d = self.ev_model_v2()
 
         # Variable for connected status
         self.plugged = True
@@ -38,6 +38,20 @@ class EVModel:
 
         sys_discrete = control.sample_system(sys_continuous,self.dt, method='zoh')
 
+
+        return sys_discrete
+    
+    def ev_model_v2(self):
+        A_bat = np.array([[-1/self.tau_ev]])  # State matrix (1x1 matrix)
+        B_bat = np.array([[1]])  # Input matrix (1x1 matrix)
+        C_bat = np.array([[1]])  # Output matrix (1x1 matrix)
+        D_bat = np.array([[0]])  # Feedforward matrix (1x1 matrix)
+
+        # Continuous-time state-space representation
+        sys_continuous = control.ss(A_bat, B_bat, C_bat, D_bat)
+
+        # Convert to discrete-time state-space representation
+        sys_discrete = control.sample_system(sys_continuous,self.dt, method='zoh')
 
         return sys_discrete
     

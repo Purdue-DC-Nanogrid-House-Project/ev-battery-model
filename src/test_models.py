@@ -410,10 +410,17 @@ def evbm_optimization_v1(optimizer):
 
     # Constraints
     constraints = [
-        P_util == P_dem + P_bat + P_ev - P_sol[:optimizer.K],
+        P_bat == cp.maximum(P_bat/optimizer.battery_model.eta_c_b,P_bat*optimizer.battery_model.eta_c_b),
+        P_ev == cp.maximum(P_bat/optimizer.ev_model.eta_c_ev,P_bat*optimizer.ev_model.eta_c_ev),
 
+        P_util == P_dem + P_bat + P_ev - P_sol[:optimizer.K],
+        
         #EV Constrains
         x_ev[0, 0] == optimizer.x0_ev,
+        #add EV leaving and arrival constraint here
+        #calculate what SOC the battery comes back at and add constrant for this as well and what the battery leaves at
+        #Piece Wise functioN
+        #P_bat_eff = np.max()
         x_ev[:, 1:optimizer.K+1] == cp.multiply(x_ev[:, :optimizer.K],optimizer.ev_model.sys_d.A) + cp.multiply(P_ev.T,optimizer.ev_model.sys_d.B),
             #Power Constraints
         P_ev <= cp.multiply(optimizer.ev_model.p_c_bar_ev,optimizer.ev_model.eta_c_ev),
@@ -468,6 +475,82 @@ def evbm_optimization_v1(optimizer):
     problem.solve(verbose =False)
 
     return x_b.value,x_ev.value,P_bat.value,P_ev.value,P_util.value, P_sol,P_dem
+
+def evbm_optimization_v2(optimizer):
+    # Define variables
+    x_b = cp.Variable((1, optimizer.K+1))  # Battery SOC
+    x_ev = cp.Variable((1, optimizer.K+1))  # EV SOC
+    P_bat_c = cp.Variable((optimizer.K, 1))  # Battery charging
+    P_bat_d = cp.Variable((optimizer.K, 1))  # Battery discharging
+    P_ev_c = cp.Variable((optimizer.K, 1))   # EV charging
+    P_ev_d = cp.Variable((optimizer.K, 1))   # EV discharging
+    P_util = cp.Variable((optimizer.K, 1))   # Grid power
+
+    # Known data
+    time_range = np.arange(0, 24, optimizer.dt)
+    solar_power = (optimizer.solar_model.dc_power_total[0:-1].values)/1000
+    P_sol = np.interp(time_range, np.linspace(0, 23, len(solar_power)), solar_power).reshape(-1, 1)
+    c_elec = np.where((time_range >= 14) & (time_range <= 20), 0.2573, 0.0825).reshape(-1, 1)
+    P_dem = optimizer.home_model.demand.to_numpy().reshape(-1, 1)
+
+    # Total power = charging - discharging
+    P_bat = P_bat_c - P_bat_d
+    P_ev = P_ev_c - P_ev_d
+
+    # Constraints
+    constraints = [
+        # Grid power balance
+        P_util == P_dem + P_bat + P_ev - P_sol[:optimizer.K],
+
+        # EV SOC dynamics
+        x_ev[0, 0] == optimizer.x0_ev,
+        x_ev[:, 1:optimizer.K+1] == cp.multiply(x_ev[:, :optimizer.K], optimizer.ev_model.sys_d.A) +
+                                   cp.multiply(optimizer.ev_model.sys_d.B,
+                                               optimizer.ev_model.eta_c_ev * P_ev_c.T -
+                                               (1/optimizer.ev_model.eta_d_ev) * P_ev_d.T),
+        P_ev_c >= 0,
+        P_ev_c <= optimizer.ev_model.p_c_bar_ev,
+        P_ev_d >= 0,
+        P_ev_d <= optimizer.ev_model.p_d_bar_ev,
+
+        x_ev[0, optimizer.K] == x_ev[0, 0],
+        x_ev >= 0.1,
+        x_ev <= 0.9,
+
+        # Battery SOC dynamics
+        x_b[0, 0] == optimizer.x0_b,
+        x_b[:, 1:optimizer.K+1] == cp.multiply(x_b[:, :optimizer.K], optimizer.battery_model.sys_d.A) +
+                                  cp.multiply(optimizer.battery_model.sys_d.B,
+                                              optimizer.battery_model.eta_c_b * P_bat_c.T -
+                                              (1/optimizer.battery_model.eta_d_b) * P_bat_d.T),
+        P_bat_c >= 0,
+        P_bat_c <= optimizer.battery_model.p_c_bar_b,
+        P_bat_d >= 0,
+        P_bat_d <= optimizer.battery_model.p_d_bar_b,
+        x_b[0, optimizer.K] == x_b[0, 0],
+        x_b >= 0.1,
+        x_b <= 0.9
+    ]
+
+    # Objective function 
+    objective = cp.Minimize(
+        cp.sum(
+            10 * cp.norm(optimizer.dt * (0 - P_util), 2) +
+            cp.norm(optimizer.dt * (0 - P_bat), 2) +
+            cp.norm(optimizer.dt * (0 - P_ev), 2) +
+            1000 * cp.maximum(0, -P_util) +
+            1000 * cp.maximum(0, P_util) +
+            optimizer.dt * cp.maximum(0, cp.multiply(c_elec, P_util)) +
+            optimizer.dt * cp.maximum(0, x_b[:, :optimizer.K] - 0.8) +
+            optimizer.dt * cp.maximum(0, 0.2 - x_b[:, :optimizer.K])
+        )
+    )
+
+    # Solve
+    problem = cp.Problem(objective, constraints)
+    problem.solve(verbose=False)
+
+    return x_b.value, x_ev.value, P_bat.value, P_ev.value, P_util.value, P_sol, P_dem
 
 def plot_results(x_b,x_ev, P_bat,P_ev,P_util, P_sol, P_dem, dt):
     # Convert arrays to 1D

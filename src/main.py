@@ -10,7 +10,7 @@ from solar_panel_model import SolarPanelModel # Import SolarPanelModel Class
 from optimizer  import Optimizer #Import Optimizer Class
 
 # Import the test function
-from test_models import test_ev_charging,test_ev_charging_v2,test_solar_model,test_ev_charging_v3,evbm_optimization_v1,plot_results 
+from test_models import test_ev_charging,test_ev_charging_v2,test_solar_model,test_ev_charging_v3,evbm_optimization_v1,evbm_optimization_v2,plot_results 
 
 # Set up logging configuration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -159,7 +159,7 @@ def main():
     #test_ev_charging_v3(ev_model,charger_model,home_model,utility_model,solar_model,initial_charge_pre=0.8, initial_charge_post=0.6, target_charge= 1.0)
 
     # # Run test case of optimizer with just Utility
-    [x_b,x_ev,P_bat,P_ev,P_util, P_sol,P_dem] = evbm_optimization_v1(optimizer)
+    [x_b,x_ev,P_bat,P_ev,P_util, P_sol,P_dem] = evbm_optimization_v2(optimizer)
     plot_results(x_b,x_ev,P_bat,P_ev,P_util,P_sol,P_dem,dt)
     
 
