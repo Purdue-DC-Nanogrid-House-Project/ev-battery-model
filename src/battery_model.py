@@ -17,14 +17,14 @@ class BatteryModel:
         self.R_in = self.V_nom_b**2 / self.P_rated_b  # ohms
 
         # State-space representation
-        self.sys_d = self.battery_model()
-        self.sys_d2 = self.battery_model_v2()
-        print(f"Old Model:",self.sys_d)
-        print(f"New Model:",self.sys_d2)
+        self.sys_d = self.battery_model_v2()
+        # self.sys_d2 = self.battery_model_v2()
+        # print(f"Old Model:",self.sys_d)
+        # print(f"New Model:",self.sys_d2)
 
     def battery_model(self):
         A_bat = np.array([[0]])  # State matrix (1x1 matrix)
-        B_bat = np.array([[self.eta_c_b]])  # Input matrix (1x1 matrix)
+        B_bat = np.array([[1]])  # Input matrix (1x1 matrix)
         C_bat = np.array([[1]])  # Output matrix (1x1 matrix)
         D_bat = np.array([[0]])  # Feedforward matrix (1x1 matrix)
 
@@ -37,9 +37,8 @@ class BatteryModel:
         return sys_discrete
     
     def battery_model_v2(self):
-        a = np.exp(-self.dt / self.tau_b)
-        A_bat = np.array([[a]])  # State matrix (1x1 matrix)
-        B_bat = np.array([[(1 - a) * self.tau_b]])  # Input matrix (1x1 matrix)
+        A_bat = np.array([[-1/self.tau_b]])  # State matrix (1x1 matrix)
+        B_bat = np.array([[1]])  # Input matrix (1x1 matrix)
         C_bat = np.array([[1]])  # Output matrix (1x1 matrix)
         D_bat = np.array([[0]])  # Feedforward matrix (1x1 matrix)
 

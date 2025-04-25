@@ -27,7 +27,7 @@ class EVModel:
 
     def ev_model(self):
         A_ev = np.array([[0]])  # State matrix (1x1 matrix)
-        B_ev = np.array([[self.eta_c_ev]])  # Input matrix (1x1 matrix)
+        B_ev = np.array([[1]])  # Input matrix (1x1 matrix)
         C_ev = np.array([[1]])  # Output matrix (1x1 matrix)
         D_ev = np.array([[0]])  # Feedforward matrix (1x1 matrix)
 

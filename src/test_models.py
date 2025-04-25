@@ -465,7 +465,7 @@ def evbm_optimization_v1(optimizer):
 
     # Define and solve the problem
     problem = cp.Problem(objective, constraints)
-    problem.solve()
+    problem.solve(verbose =False)
 
     return x_b.value,x_ev.value,P_bat.value,P_ev.value,P_util.value, P_sol,P_dem
 
