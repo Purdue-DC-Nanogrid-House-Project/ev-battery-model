@@ -416,8 +416,8 @@ def evbm_optimization_v1(optimizer):
         x_ev[0, 0] == optimizer.x0_ev,
         x_ev[:, 1:optimizer.K+1] == cp.multiply(x_ev[:, :optimizer.K],optimizer.ev_model.sys_d.A) + cp.multiply(P_ev.T,optimizer.ev_model.sys_d.B),
             #Power Constraints
-        P_ev <= optimizer.ev_model.p_c_bar_ev*optimizer.ev_model.eta_c_ev,
-        P_ev >= -optimizer.ev_model.p_d_bar_ev/optimizer.ev_model.eta_d_ev,
+        P_ev <= cp.multiply(optimizer.ev_model.p_c_bar_ev,optimizer.ev_model.eta_c_ev),
+        P_ev >= cp.multiply(-optimizer.ev_model.p_d_bar_ev,1/optimizer.ev_model.eta_d_ev),
 
         x_ev[0, optimizer.K] == x_ev[0, 0],
             #Physical Limits
@@ -428,8 +428,8 @@ def evbm_optimization_v1(optimizer):
         x_b[0, 0] == optimizer.x0_b,
         x_b[:, 1:optimizer.K+1] == cp.multiply(x_b[:, :optimizer.K],optimizer.battery_model.sys_d.A) + cp.multiply(P_bat.T,optimizer.battery_model.sys_d.B),
             #Power Constraints
-        P_bat <= optimizer.battery_model.p_c_bar_b*optimizer.battery_model.eta_c_b,
-        P_bat >= -optimizer.battery_model.p_d_bar_b/optimizer.battery_model.eta_d_b,
+        P_bat <= cp.multiply(optimizer.battery_model.p_c_bar_b,optimizer.battery_model.eta_c_b),
+        P_bat >= cp.multiply(-optimizer.battery_model.p_d_bar_b,1/optimizer.battery_model.eta_d_b),
         x_b[0, optimizer.K] == x_b[0, 0],
             #Physical Limits
         x_b >= 0.1,
