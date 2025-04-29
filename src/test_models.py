@@ -514,7 +514,7 @@ def evbm_optimization_v2(optimizer):
         # EV SOC dynamics
         x_ev[0, 0] == optimizer.x0_ev,
         x_ev[0,K_leave] == 0.8,
-        x_ev[0,K_arrive] == 0.1,
+        x_ev[0,K_arrive] == 0.2,
         P_ev[K_leave:K_arrive] == 0,
         # x_ev[0,K_arrive] == x_ev[0,K_leave-1],
         x_ev[:, 1:optimizer.K+1] == cp.multiply(x_ev[:, :optimizer.K], optimizer.ev_model.sys_d.A) +
@@ -611,12 +611,12 @@ def plot_results(x_b,x_ev, P_bat,P_ev,P_util, P_sol, P_dem, dt):
 
     # Plot Power Data (Utility, Battery, Solar, Demand, and Conservation)
     plt.figure(figsize=(10, 6))
-    plt.plot(time, P_util, label="Utility Power (P_util)", color="b", linestyle='-', linewidth=2)
+    # plt.plot(time, P_util, label="Utility Power (P_util)", color="b", linestyle='-', linewidth=2)
     plt.plot(time, P_bat, label="Battery Power (P_bat)", color="g", linestyle='-', linewidth=2)
     plt.plot(time, P_ev, label="EV Power (P_ev)", color="grey", linestyle='-', linewidth=2)
-    plt.plot(time, P_sol, label="Solar Power (P_sol)", color="orange", linestyle='-', linewidth=2)
-    plt.plot(time, P_dem, label="Demand", color="purple", linestyle='-', linewidth=2)
-    plt.plot(time, P_tot, label="Power Conservation (P_tot)", color="red", linestyle='-', linewidth=2)
+    # plt.plot(time, P_sol, label="Solar Power (P_sol)", color="orange", linestyle='-', linewidth=2)
+    # plt.plot(time, P_dem, label="Demand", color="purple", linestyle='-', linewidth=2)
+    # plt.plot(time, P_tot, label="Power Conservation (P_tot)", color="red", linestyle='-', linewidth=2)
     plt.xlabel("Time (hours)")
     plt.ylabel("Power (kW)")
     plt.title("Utility Power, Battery Power,EV_Power,Solar Power, Demand, and Power Conservation")
