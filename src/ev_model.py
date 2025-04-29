@@ -2,7 +2,7 @@ import numpy as np
 import control
 
 class EVModel:
-    def __init__(self, dt, tau_ev, eta_c_ev, eta_d_ev, x_bar_ev, p_c_bar_ev, p_d_bar_ev, V_nom_ev, P_rated_ev, alpha_ev, Temperature_ev):
+    def __init__(self, dt, tau_ev, eta_c_ev, eta_d_ev, x_bar_ev, p_c_bar_ev, p_d_bar_ev, V_nom_ev, P_rated_ev, alpha_ev, Temperature_ev,time_leave,time_arrive,distance):
         self.dt = dt  # time step
         self.tau_ev = tau_ev
         self.eta_c_ev = eta_c_ev
@@ -18,6 +18,9 @@ class EVModel:
 
         self.alpha_ev = alpha_ev
         self.Temperature_ev = Temperature_ev
+        self.time_leave = time_leave
+        self.time_arrive = time_arrive
+        self.distance = distance
 
         # State-space representation
         self.sys_d = self.ev_model_v2()

@@ -51,7 +51,7 @@ def args_handler():
     parser.add_argument('--alpha_ev', type=check_pos, default=(0.15 + 0.4) / 2, help='Energy Intensity (kWh/km) [e.g., 0.15,0.4]')
     parser.add_argument('--temperature_ev', type=float, default=-1, help='Temperature (F) [e.g.68,20]')
         ## Use Paramaters
-    parser.add_argument('--distance',type=check_pos, default=10, help='Distance Driven (km) [e.g. 30, 50]')
+    parser.add_argument('--distance',type=check_pos, default= 10, help='Distance Driven (km) [e.g. 30, 50]')
     parser.add_argument('--time_leave',type=check_pos, default=7, help='Time left from house [e.g. 7:00 AM]')
     parser.add_argument('--time_arrive',type=check_pos, default=17, help='Time arrived at house [e.g. 5:00 PM]')
 

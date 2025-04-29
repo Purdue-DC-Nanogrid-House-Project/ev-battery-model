@@ -485,13 +485,22 @@ def evbm_optimization_v2(optimizer):
     P_ev_c = cp.Variable((optimizer.K, 1))   # EV charging
     P_ev_d = cp.Variable((optimizer.K, 1))   # EV discharging
     P_util = cp.Variable((optimizer.K, 1))   # Grid power
+    t_leave = optimizer.ev_model.time_leave
+    t_arrive = optimizer.ev_model.time_arrive
+    K_leave = int(t_leave / optimizer.dt)
+    K_arrive = int(t_arrive / optimizer.dt)
+    print("Index Leave",{K_leave})
+    print("Index arrive",{K_arrive})
 
     # Known data
     time_range = np.arange(0, 24, optimizer.dt)
     solar_power = (optimizer.solar_model.dc_power_total[0:-1].values)/1000
+    
     P_sol = np.interp(time_range, np.linspace(0, 23, len(solar_power)), solar_power).reshape(-1, 1)
     c_elec = np.where((time_range >= 14) & (time_range <= 20), 0.2573, 0.0825).reshape(-1, 1)
     P_dem = optimizer.home_model.demand.to_numpy().reshape(-1, 1)
+    ev_plugged = np.ones_like(P_sol)
+    ev_plugged[K_leave:K_arrive] = 0
 
     # Total power = charging - discharging
     P_bat = P_bat_c - P_bat_d
@@ -500,14 +509,19 @@ def evbm_optimization_v2(optimizer):
     # Constraints
     constraints = [
         # Grid power balance
-        P_util == P_dem + P_bat + P_ev - P_sol[:optimizer.K],
+        P_util == P_dem + P_bat + cp.multiply(P_ev, ev_plugged[:optimizer.K]) - P_sol[:optimizer.K],
 
         # EV SOC dynamics
         x_ev[0, 0] == optimizer.x0_ev,
+        x_ev[0,K_leave] == 0.8,
+        x_ev[0,K_arrive] == 0.1,
+        P_ev[K_leave:K_arrive] == 0,
+        # x_ev[0,K_arrive] == x_ev[0,K_leave-1],
         x_ev[:, 1:optimizer.K+1] == cp.multiply(x_ev[:, :optimizer.K], optimizer.ev_model.sys_d.A) +
                                    cp.multiply(optimizer.ev_model.sys_d.B,
                                                optimizer.ev_model.eta_c_ev * P_ev_c.T -
                                                (1/optimizer.ev_model.eta_d_ev) * P_ev_d.T),
+
         P_ev_c >= 0,
         P_ev_c <= optimizer.ev_model.p_c_bar_ev,
         P_ev_d >= 0,

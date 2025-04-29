@@ -89,7 +89,10 @@ def main():
         V_nom_ev=model_args.V_nom_ev,
         P_rated_ev=model_args.P_rated_ev,
         alpha_ev=model_args.alpha_ev,
-        Temperature_ev=model_args.temperature_ev
+        Temperature_ev=model_args.temperature_ev,
+        time_leave = model_args.time_leave,
+        time_arrive = model_args.time_arrive,
+        distance = model_args.distance
     )
 
     # Create Utility Model Instance
