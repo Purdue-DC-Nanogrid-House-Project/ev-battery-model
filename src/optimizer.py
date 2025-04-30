@@ -4,7 +4,7 @@ class Optimizer:
         self.battery_model = battery_model
         self.ev_model = ev_model
         self.solar_model = solar_model
-        self.home_model = home_model
+        self.home_model = home_model 
         self.dt = dt
         self.x0_b = x0_b
         self.x0_ev = x0_ev

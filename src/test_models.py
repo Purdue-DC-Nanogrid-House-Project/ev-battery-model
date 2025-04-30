@@ -503,12 +503,13 @@ def evbm_optimization_v2(optimizer):
     ev_plugged[K_leave:K_arrive] = 0
 
     # Total power = charging - discharging
-    P_bat = P_bat_c - P_bat_d
-    P_ev = P_ev_c - P_ev_d
+    P_bat = optimizer.battery_model.eta_c_b * P_bat_c - (1 / optimizer.battery_model.eta_d_b) * P_bat_d
+    P_ev = optimizer.ev_model.eta_c_ev * P_ev_c - (1 / optimizer.ev_model.eta_d_ev) * P_ev_d
 
     # Constraints
     constraints = [
         # Grid power balance
+
         P_util == P_dem + P_bat + cp.multiply(P_ev, ev_plugged[:optimizer.K]) - P_sol[:optimizer.K],
 
         # EV SOC dynamics
@@ -552,9 +553,9 @@ def evbm_optimization_v2(optimizer):
             10 * cp.norm(optimizer.dt * (0 - P_util), 2) +
             cp.norm(optimizer.dt * (0 - P_bat), 2) +
             cp.norm(optimizer.dt * (0 - P_ev), 2) +
-            1000 * cp.maximum(0, -P_util) +
-            1000 * cp.maximum(0, P_util) +
-            optimizer.dt * cp.maximum(0, cp.multiply(c_elec, P_util)) +
+            100 * cp.maximum(0, -P_util) +
+            10000 * cp.maximum(0, P_util) +
+            # optimizer.dt * cp.maximum(0, cp.multiply(c_elec, P_util)) +
             optimizer.dt * cp.maximum(0, x_b[:, :optimizer.K] - 0.8) +
             optimizer.dt * cp.maximum(0, 0.2 - x_b[:, :optimizer.K])
         )
@@ -611,12 +612,12 @@ def plot_results(x_b,x_ev, P_bat,P_ev,P_util, P_sol, P_dem, dt):
 
     # Plot Power Data (Utility, Battery, Solar, Demand, and Conservation)
     plt.figure(figsize=(10, 6))
-    # plt.plot(time, P_util, label="Utility Power (P_util)", color="b", linestyle='-', linewidth=2)
+    plt.plot(time, P_util, label="Utility Power (P_util)", color="b", linestyle='-', linewidth=2)
     plt.plot(time, P_bat, label="Battery Power (P_bat)", color="g", linestyle='-', linewidth=2)
     plt.plot(time, P_ev, label="EV Power (P_ev)", color="grey", linestyle='-', linewidth=2)
-    # plt.plot(time, P_sol, label="Solar Power (P_sol)", color="orange", linestyle='-', linewidth=2)
-    # plt.plot(time, P_dem, label="Demand", color="purple", linestyle='-', linewidth=2)
-    # plt.plot(time, P_tot, label="Power Conservation (P_tot)", color="red", linestyle='-', linewidth=2)
+    plt.plot(time, P_sol, label="Solar Power (P_sol)", color="orange", linestyle='-', linewidth=2)
+    plt.plot(time, P_dem, label="Demand", color="purple", linestyle='-', linewidth=2)
+    plt.plot(time, P_tot, label="Power Conservation (P_tot)", color="red", linestyle='-', linewidth=2)
     plt.xlabel("Time (hours)")
     plt.ylabel("Power (kW)")
     plt.title("Utility Power, Battery Power,EV_Power,Solar Power, Demand, and Power Conservation")
