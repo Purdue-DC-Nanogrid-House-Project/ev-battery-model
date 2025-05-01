@@ -550,12 +550,12 @@ def evbm_optimization_v2(optimizer):
     # Objective function 
     objective = cp.Minimize(
         cp.sum(
-            10 * cp.norm(optimizer.dt * (0 - P_util), 2) +
-            cp.norm(optimizer.dt * (0 - P_bat), 2) +
-            cp.norm(optimizer.dt * (0 - P_ev), 2) +
-            100 * cp.maximum(0, -P_util) +
-            10000 * cp.maximum(0, P_util) +
-            # optimizer.dt * cp.maximum(0, cp.multiply(c_elec, P_util)) +
+            2000 * cp.norm(optimizer.dt * (0 - P_util), 2) +
+            100*cp.norm(optimizer.dt * (0 - P_bat), 2) +
+            100*cp.norm(optimizer.dt * (0 - P_ev), 2) +
+            1000 * cp.maximum(0, -P_util) +
+            4000 * cp.maximum(0, P_util) +
+            optimizer.dt * cp.maximum(0, cp.multiply(c_elec, P_util)) +
             optimizer.dt * cp.maximum(0, x_b[:, :optimizer.K] - 0.8) +
             optimizer.dt * cp.maximum(0, 0.2 - x_b[:, :optimizer.K])
         )
