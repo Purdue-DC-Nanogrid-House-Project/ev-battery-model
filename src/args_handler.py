@@ -24,7 +24,7 @@ def args_handler():
 
     # Charger Battery
         ## Efficiency Parameters
-    parser.add_argument('--tau_b', type=check_pos, default=2400, help='Dissipation Time Constant (h) [typically between 800-2400 h]')
+    parser.add_argument('--tau_b', type=check_pos, default=1600, help='Dissipation Time Constant (h) [typically between 800-2400 h]')
     parser.add_argument('--eta_c_b', type=check_eta, default=0.95, help='Charging Efficiency (fraction, e.g., 0.95 for 95%%)')
     parser.add_argument('--eta_d_b', type=check_eta, default=0.95, help='Discharging Efficiency (fraction, e.g., 0.95 for 95%%)')
         ## Capacity Parameters 
@@ -37,7 +37,7 @@ def args_handler():
 
     # Electric Vehicle
         ## Efficiency Parameters
-    parser.add_argument('--tau_ev', type=check_pos, default=2400, help='Dissipation Time Constant (h) [typically between 800-2400 h]')
+    parser.add_argument('--tau_ev', type=check_pos, default=1600, help='Dissipation Time Constant (h) [typically between 800-2400 h]')
     parser.add_argument('--eta_c_ev', type=check_eta, default=0.95, help='Charging Efficiency (fraction, e.g., 0.95 for 95%%)')
     parser.add_argument('--eta_d_ev', type=check_eta, default=0.95, help='Discharging Efficiency (fraction, e.g., 0.95 for 95%%)')
         ## Capacity Parameters 

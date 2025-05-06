@@ -20,7 +20,7 @@ class BatteryModel:
         self.sys_d = self.battery_model_v2()
         # self.sys_d2 = self.battery_model_v2()
         # print(f"Old Model:",self.sys_d)
-        # print(f"New Model:",self.sys_d2)
+        print(f"New Model:",self.sys_d)
 
     def battery_model(self):
         A_bat = np.array([[0]])  # State matrix (1x1 matrix)

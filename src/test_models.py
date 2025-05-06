@@ -484,6 +484,8 @@ def evbm_optimization_v2(optimizer):
     P_bat_d = cp.Variable((optimizer.K, 1))  # Battery discharging
     P_ev_c = cp.Variable((optimizer.K, 1))   # EV charging
     P_ev_d = cp.Variable((optimizer.K, 1))   # EV discharging
+    P_bat = cp.Variable((optimizer.K, 1))  
+    P_ev = cp.Variable((optimizer.K, 1))  
     P_util = cp.Variable((optimizer.K, 1))   # Grid power
     t_leave = optimizer.ev_model.time_leave
     t_arrive = optimizer.ev_model.time_arrive
@@ -502,14 +504,12 @@ def evbm_optimization_v2(optimizer):
     ev_plugged = np.ones_like(P_sol)
     ev_plugged[K_leave:K_arrive] = 0
 
-    # Total power = charging - discharging
-    P_bat = optimizer.battery_model.eta_c_b * P_bat_c - (1 / optimizer.battery_model.eta_d_b) * P_bat_d
-    P_ev = optimizer.ev_model.eta_c_ev * P_ev_c - (1 / optimizer.ev_model.eta_d_ev) * P_ev_d
 
     # Constraints
     constraints = [
         # Grid power balance
-
+        P_bat == optimizer.battery_model.eta_c_b * P_bat_c - (1 / optimizer.battery_model.eta_d_b) * P_bat_d,
+        P_ev == optimizer.ev_model.eta_c_ev * P_ev_c - (1 / optimizer.ev_model.eta_d_ev) * P_ev_d,
         P_util == P_dem + P_bat + cp.multiply(P_ev, ev_plugged[:optimizer.K]) - P_sol[:optimizer.K],
 
         # EV SOC dynamics
@@ -517,16 +517,11 @@ def evbm_optimization_v2(optimizer):
         x_ev[0,K_leave] == 0.8,
         x_ev[0,K_arrive] == 0.2,
         P_ev[K_leave:K_arrive] == 0,
-        # x_ev[0,K_arrive] == x_ev[0,K_leave-1],
-        x_ev[:, 1:optimizer.K+1] == cp.multiply(x_ev[:, :optimizer.K], optimizer.ev_model.sys_d.A) +
-                                   cp.multiply(optimizer.ev_model.sys_d.B,
-                                               optimizer.ev_model.eta_c_ev * P_ev_c.T -
-                                               (1/optimizer.ev_model.eta_d_ev) * P_ev_d.T),
+        x_ev[:, 1:optimizer.K+1] == optimizer.ev_model.sys_d.A @ x_ev[:, :optimizer.K] +
+                            optimizer.ev_model.sys_d.B @ P_ev.T,
 
-        P_ev_c >= 0,
-        P_ev_c <= optimizer.ev_model.p_c_bar_ev,
-        P_ev_d >= 0,
-        P_ev_d <= optimizer.ev_model.p_d_bar_ev,
+        P_ev <= optimizer.ev_model.p_c_bar_ev,
+        P_ev >= -optimizer.ev_model.p_d_bar_ev,
 
         x_ev[0, optimizer.K] == x_ev[0, 0],
         x_ev >= 0.1,
@@ -534,14 +529,10 @@ def evbm_optimization_v2(optimizer):
 
         # Battery SOC dynamics
         x_b[0, 0] == optimizer.x0_b,
-        x_b[:, 1:optimizer.K+1] == cp.multiply(x_b[:, :optimizer.K], optimizer.battery_model.sys_d.A) +
-                                  cp.multiply(optimizer.battery_model.sys_d.B,
-                                              optimizer.battery_model.eta_c_b * P_bat_c.T -
-                                              (1/optimizer.battery_model.eta_d_b) * P_bat_d.T),
-        P_bat_c >= 0,
-        P_bat_c <= optimizer.battery_model.p_c_bar_b,
-        P_bat_d >= 0,
-        P_bat_d <= optimizer.battery_model.p_d_bar_b,
+        x_b[:, 1:optimizer.K+1] == optimizer.battery_model.sys_d.A @ x_b[:, :optimizer.K] +
+                           optimizer.battery_model.sys_d.B @ P_bat.T,
+        P_bat <= optimizer.battery_model.p_c_bar_b,
+        P_bat >= -optimizer.battery_model.p_d_bar_b,
         x_b[0, optimizer.K] == x_b[0, 0],
         x_b >= 0.1,
         x_b <= 0.9
@@ -550,14 +541,16 @@ def evbm_optimization_v2(optimizer):
     # Objective function 
     objective = cp.Minimize(
         cp.sum(
-            2000 * cp.norm(optimizer.dt * (0 - P_util), 2) +
-            100*cp.norm(optimizer.dt * (0 - P_bat), 2) +
-            100*cp.norm(optimizer.dt * (0 - P_ev), 2) +
-            1000 * cp.maximum(0, -P_util) +
-            4000 * cp.maximum(0, P_util) +
-            optimizer.dt * cp.maximum(0, cp.multiply(c_elec, P_util)) +
-            optimizer.dt * cp.maximum(0, x_b[:, :optimizer.K] - 0.8) +
-            optimizer.dt * cp.maximum(0, 0.2 - x_b[:, :optimizer.K])
+                1000 * cp.norm(optimizer.dt * P_util, 2) +                      # moderate penalty on total grid use
+                0.01 * cp.norm(optimizer.dt * P_bat, 2) +                        # low penalty on battery use
+                0.01 * cp.norm(optimizer.dt * P_ev, 2)+                          # low penalty on EV use
+                10*optimizer.dt * cp.maximum(0, cp.multiply(c_elec, P_util))+   # keep energy cost awareness
+
+                10*optimizer.dt * cp.maximum(0, x_b[:, :optimizer.K] - 0.8) +     # soft constraints on SOC
+                10*optimizer.dt * cp.maximum(0, 0.2 - x_b[:, :optimizer.K]) +
+                10*optimizer.dt * cp.maximum(0, x_ev[:, :optimizer.K] - 0.8) +     # soft constraints on SOC
+                10*optimizer.dt * cp.maximum(0, 0.2 - x_ev[:, :optimizer.K])
+                
         )
     )
 
@@ -582,15 +575,15 @@ def plot_results(x_b,x_ev, P_bat,P_ev,P_util, P_sol, P_dem, dt):
     # Compute Power Conservation Variable
     P_tot = -P_util + P_dem + P_bat - P_sol + P_ev  # Power balance check
 
-    # Check shapes
-    print("Time shape:", time.shape)
-    print("x_b shape:", x_b.shape)
-    print("P_util shape:", P_util.shape)
-    print("P_bat shape:", P_bat.shape)
-    print("P_ev shape:", P_ev.shape)
-    print("P_sol shape:", P_sol.shape)
-    print("P_dem shape:", P_dem.shape)
-    print("P_tot shape:", P_tot.shape)  # Ensure shape consistency
+    # # Check shapes
+    # print("Time shape:", time.shape)
+    # print("x_b shape:", x_b.shape)
+    # print("P_util shape:", P_util.shape)
+    # print("P_bat shape:", P_bat.shape)
+    # print("P_ev shape:", P_ev.shape)
+    # print("P_sol shape:", P_sol.shape)
+    # print("P_dem shape:", P_dem.shape)
+    # print("P_tot shape:", P_tot.shape)  # Ensure shape consistency
 
     # Compute cumulative energy (kWh)
     E_util = np.cumsum(P_util) * dt
@@ -598,6 +591,17 @@ def plot_results(x_b,x_ev, P_bat,P_ev,P_util, P_sol, P_dem, dt):
     E_ev = np.cumsum(P_ev) * dt
     E_sol = np.cumsum(P_sol) * dt
     E_dem = np.cumsum(P_dem) * dt
+
+    E_grid_to_home = np.sum(P_util[P_util > 0]) * dt
+    E_home_demand = np.sum(P_dem) * dt
+    E_solar_generated = np.sum(P_sol) * dt
+    E_fed_to_grid = -np.sum(P_util[P_util < 0]) * dt  # negative values, so negate
+
+    print("\n=== Energy Flow Summary (kWh) ===")
+    print(f"1. Grid supplied to Home/Battery: {E_grid_to_home:.2f} kWh")
+    print(f"2. Total Home Demand:             {E_home_demand:.2f} kWh")
+    print(f"3. Solar Energy Produced:         {E_solar_generated:.2f} kWh")
+    print(f"4. Energy Fed Back to Grid:       {E_fed_to_grid:.2f} kWh")
 
     # Plot Battery State of Charge (SOC)
     plt.figure(figsize=(10, 6))
@@ -614,7 +618,7 @@ def plot_results(x_b,x_ev, P_bat,P_ev,P_util, P_sol, P_dem, dt):
     plt.figure(figsize=(10, 6))
     plt.plot(time, P_util, label="Utility Power (P_util)", color="b", linestyle='-', linewidth=2)
     plt.plot(time, P_bat, label="Battery Power (P_bat)", color="g", linestyle='-', linewidth=2)
-    plt.plot(time, P_ev, label="EV Power (P_ev)", color="grey", linestyle='-', linewidth=2)
+    plt.plot(time, P_ev, label="EV Power (P_ev)", color="black", linestyle='-', linewidth=2)
     plt.plot(time, P_sol, label="Solar Power (P_sol)", color="orange", linestyle='-', linewidth=2)
     plt.plot(time, P_dem, label="Demand", color="purple", linestyle='-', linewidth=2)
     plt.plot(time, P_tot, label="Power Conservation (P_tot)", color="red", linestyle='-', linewidth=2)
@@ -625,30 +629,36 @@ def plot_results(x_b,x_ev, P_bat,P_ev,P_util, P_sol, P_dem, dt):
     plt.legend(loc="best")
     plt.tight_layout()
 
-    E_grid_to_home = np.sum(P_util[P_util > 0]) * dt
-    E_home_demand = np.sum(P_dem) * dt
-    E_solar_generated = np.sum(P_sol) * dt
-    E_fed_to_grid = -np.sum(P_util[P_util < 0]) * dt  # negative values, so negate
+    fig1, axs1 = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
+    # Battery SOC
+    axs1[0].plot(time, x_b, label="State of Charge (SOC) Battery", color="r", linewidth=2)
+    axs1[0].set_ylabel("SOC (%)")
+    axs1[0].set_title("Battery: State of Charge (SOC) and Power")
+    axs1[0].grid(True)
+    axs1[0].legend(loc="best")
+    # Battery Power
+    axs1[1].plot(time, P_bat, label="Battery Power (P_bat)", color="g", linewidth=2)
+    axs1[1].set_xlabel("Time (hours)")
+    axs1[1].set_ylabel("Power (kW)")
+    axs1[1].grid(True)
+    axs1[1].legend(loc="best")
+    plt.tight_layout()
 
-    print("\n=== Energy Flow Summary (kWh) ===")
-    print(f"1. Grid supplied to Home/Battery: {E_grid_to_home:.2f} kWh")
-    print(f"2. Total Home Demand:             {E_home_demand:.2f} kWh")
-    print(f"3. Solar Energy Produced:         {E_solar_generated:.2f} kWh")
-    print(f"4. Energy Fed Back to Grid:       {E_fed_to_grid:.2f} kWh")
+    fig2, axs2 = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
+    # EV SOC
+    axs2[0].plot(time, x_ev, label="State of Charge (SOC) EV", color="grey", linewidth=2)
+    axs2[0].set_ylabel("SOC (%)")
+    axs2[0].set_title("EV: State of Charge (SOC) and Power")
+    axs2[0].grid(True)
+    axs2[0].legend(loc="best")
+    # EV Power
+    axs2[1].plot(time, P_ev, label="EV Power (P_ev)", color="black", linewidth=2)
+    axs2[1].set_xlabel("Time (hours)")
+    axs2[1].set_ylabel("Power (kW)")
+    axs2[1].grid(True)
+    axs2[1].legend(loc="best")
+    plt.tight_layout()
 
-    #  # Plot Cumulative Energy
-    # plt.figure(figsize=(10, 6))
-    # plt.plot(time, E_util, label="Cumulative Utility Energy", color="b", linestyle='-')
-    # plt.plot(time, E_bat, label="Cumulative Battery Energy", color="g", linestyle='-')
-    # plt.plot(time, E_ev, label="Cumulative EV Energy", color="grey", linestyle='-')
-    # plt.plot(time, E_sol, label="Cumulative Solar Energy", color="orange", linestyle='-')
-    # plt.plot(time, E_dem, label="Cumulative Demand Energy", color="purple", linestyle='-')
-    # plt.xlabel("Time (hours)")
-    # plt.ylabel("Cumulative Energy (kWh)")
-    # plt.title("Cumulative Energy for Each Power Flow")
-    # plt.grid(True)
-    # plt.legend(loc="best")
-    # plt.tight_layout()
 
-    # Show plot
     plt.show()
+
