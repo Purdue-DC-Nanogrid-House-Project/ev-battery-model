@@ -548,6 +548,7 @@ def evbm_optimization_v2(optimizer):
 
                 10*optimizer.dt * cp.maximum(0, x_b[:, :optimizer.K] - 0.8) +     # soft constraints on SOC
                 10*optimizer.dt * cp.maximum(0, 0.2 - x_b[:, :optimizer.K]) +
+                
                 10*optimizer.dt * cp.maximum(0, x_ev[:, :optimizer.K] - 0.8) +     # soft constraints on SOC
                 10*optimizer.dt * cp.maximum(0, 0.2 - x_ev[:, :optimizer.K])
                 
@@ -584,13 +585,6 @@ def plot_results(x_b,x_ev, P_bat,P_ev,P_util, P_sol, P_dem, dt):
     # print("P_sol shape:", P_sol.shape)
     # print("P_dem shape:", P_dem.shape)
     # print("P_tot shape:", P_tot.shape)  # Ensure shape consistency
-
-    # Compute cumulative energy (kWh)
-    E_util = np.cumsum(P_util) * dt
-    E_bat = np.cumsum(P_bat) * dt
-    E_ev = np.cumsum(P_ev) * dt
-    E_sol = np.cumsum(P_sol) * dt
-    E_dem = np.cumsum(P_dem) * dt
 
     E_grid_to_home = np.sum(P_util[P_util > 0]) * dt
     E_home_demand = np.sum(P_dem) * dt
@@ -662,3 +656,80 @@ def plot_results(x_b,x_ev, P_bat,P_ev,P_util, P_sol, P_dem, dt):
 
     plt.show()
 
+def plot_obj_functions(x_b,x_ev, P_bat,P_ev,P_util, P_sol, P_dem, dt):
+    # Convert arrays to 1D
+    P_util = np.squeeze(P_util)
+    x_b = np.squeeze(x_b)[:-1]  # Trim last value of x_b to match other arrays
+    x_ev = np.squeeze(x_ev)[:-1]
+    P_bat = np.squeeze(P_bat)
+    P_ev = np.squeeze(P_ev)
+    P_sol = np.squeeze(P_sol)
+    P_dem = np.squeeze(P_dem)
+
+    # Create time vector
+    time = np.arange(0, len(P_util) * dt, dt)
+    # Create cost vector
+    c_elec = np.where((time >= 14) & (time <= 20), 0.2573, 0.0825)
+
+    # Compute each term
+    obj_grid = 1000 * (dt * P_util) ** 2
+    obj_bat = 0.01 * (dt * P_bat) ** 2
+    obj_ev = 0.01 * (dt * P_ev) ** 2
+    obj_cost = 10 * dt * np.maximum(0, c_elec * P_util)
+
+    obj_soc_b_high = 10 * dt * np.maximum(0, x_b - 0.8)
+    obj_soc_b_low = 10 * dt * np.maximum(0, 0.2 - x_b)
+    obj_soc_ev_high = 10 * dt * np.maximum(0, x_ev - 0.8)
+    obj_soc_ev_low = 10 * dt * np.maximum(0, 0.2 - x_ev)
+
+    # Plotting
+    plt.figure(figsize=(14, 10))
+
+    plt.subplot(4, 2, 1)
+    plt.plot(time, obj_grid, label="Grid Use Penalty")
+    plt.ylabel("Penalty")
+    plt.title("Grid Use")
+    plt.grid()
+
+    plt.subplot(4, 2, 2)
+    plt.plot(time, obj_cost, label="Electricity Cost Penalty", color='orange')
+    plt.title("Electricity Cost")
+    plt.grid()
+
+    plt.subplot(4, 2, 3)
+    plt.plot(time, obj_bat, label="Battery Use Penalty", color='green')
+    plt.title("Battery Use")
+    plt.grid()
+
+    plt.subplot(4, 2, 4)
+    plt.plot(time, obj_ev, label="EV Use Penalty", color='purple')
+    plt.title("EV Use")
+    plt.grid()
+
+    plt.subplot(4, 2, 5)
+    plt.plot(time, obj_soc_b_high, label="Battery SOC > 0.8", color='red')
+    plt.plot(time, obj_soc_b_low, label="Battery SOC < 0.2", color='blue')
+    plt.title("Battery SOC Penalties")
+    plt.legend()
+    plt.grid()
+
+    plt.subplot(4, 2, 6)
+    plt.plot(time, obj_soc_ev_high, label="EV SOC > 0.8", color='red')
+    plt.plot(time, obj_soc_ev_low, label="EV SOC < 0.2", color='blue')
+    plt.title("EV SOC Penalties")
+    plt.legend()
+    plt.grid()
+
+    # Optional: total objective value per time step
+    total_obj = (obj_grid + obj_bat + obj_ev + obj_cost +
+                 obj_soc_b_high + obj_soc_b_low +
+                 obj_soc_ev_high + obj_soc_ev_low)
+
+    plt.subplot(4, 1, 4)
+    plt.plot(time, total_obj, label="Total Objective", color='black')
+    plt.title("Total Objective Value")
+    plt.xlabel("Time (s)")
+    plt.grid()
+
+    plt.tight_layout()
+    plt.show()
