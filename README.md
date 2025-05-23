@@ -180,19 +180,7 @@ conda env create -f requirements.yaml
 conda activate evbm
 ```
 
-3️⃣ Project Structure
-```bash
-.
-├── data/                    # Demand profiles, weather data, etc.
-├── img/                     # Graphs and figures used in README
-├── src/
-│   ├── evbm_optimization.py  # Main optimization script
-│   └── args_handler.py       # Custom CLI argument parser
-├── README.md
-└── requirements.yaml
-```
-
-4️⃣ Run the Optimization
+### 3️⃣ Run the Optimization
 Example using default test conditions:
 
 ```bash
@@ -203,3 +191,122 @@ python main.py
 📌 Use --help with any script to see the available options:
 
 ---
+## 🧩 Class Descriptions
+
+### 🔋 BatteryModel
+- Models the battery as a discrete-time linear system using state-space equations.
+- Includes efficiency constraints, voltage and power rating, and time constant (`tau_b`).
+- Provides both simple and refined dynamic SOC modeling.
+
+### 🚗 EVModel
+- Simulates the EV battery SOC using a similar state-space structure as the battery.
+- Includes parameters for thermal effects, charging efficiency, departure/arrival times, and energy demand for travel.
+- Tracks whether the EV is plugged in or out of the system.
+
+### 🏠 HomeModel
+- Loads real home demand data from a CSV file.
+- Filters demand between specified start and end times.
+- Converts demand to kW scale for integration with other components.
+
+### ☀️ SolarPanelModel
+- Uses `pvlib` to model PV generation for multiple rooftop panel segments.
+- Each segment can have different tilt, azimuth, and capacity.
+- Loads historical weather data for irradiance and temperature.
+- Computes both DC and AC power output for the given day.
+
+### ⚡ UtilityModel
+- Simple wrapper for grid utility power interface.
+- Used to track and apply external energy contributions or constraints.
+
+### 🧠 Optimizer
+- Central orchestrator for EV, battery, solar, utility, and home components.
+- Stores initial states and simulation time horizon.
+- Used to pass models and parameters into the optimization function.
+
+---
+# ⚡ EVBM Optimization and Visualization Functions ⚡
+
+This project includes three main functions to optimize and visualize energy management integrating battery and EV charging with solar power and home demand.
+
+---
+
+## 🧮 Function: `evbm_optimization_v2`
+
+**🎯 Purpose:**  
+Performs convex optimization to minimize grid energy costs and manage power flows among battery, EV, solar generation, home demand, and utility grid over a 24-hour horizon.
+
+**📥 Inputs:**  
+- `optimizer` object containing:  
+  - `K` (int): Number of time steps  
+  - `dt` (float): Time step size (hours)  
+  - Battery and EV parameters (charging/discharging efficiencies, power limits, system dynamics)  
+  - Solar power profile (`solar_model.dc_power_total`)  
+  - Home demand profile (`home_model.demand`)  
+  - Initial SOC values: `x0_b` (battery), `x0_ev` (EV)  
+  - EV arrival (`time_arrive`) and leave (`time_leave`) times  
+
+**📤 Outputs:**  
+- `x_b.value`: Battery SOC over time `(1, K+1)`  
+- `x_ev.value`: EV SOC over time `(1, K+1)`  
+- `P_bat.value`: Battery power profile `(K, 1)`  
+- `P_ev.value`: EV power profile `(K, 1)`  
+- `P_util.value`: Grid power profile `(K, 1)`  
+- `P_sol`: Interpolated solar power `(K, 1)`  
+- `P_dem`: Home demand profile `(K, 1)`  
+
+---
+
+## 📊 Function: `plot_results`
+
+**🎯 Purpose:**  
+Visualizes optimization results, including SOC curves, power flows, and energy flow summaries.
+
+**📥 Inputs:**  
+- Battery and EV SOC arrays: `x_b`, `x_ev`  
+- Battery and EV power arrays: `P_bat`, `P_ev`  
+- Grid power array: `P_util`  
+- Solar power array: `P_sol`  
+- Home demand array: `P_dem`  
+- Time step size: `dt` (hours)  
+
+**📤 Outputs:**  
+- Plots showing SOC and power profiles over time  
+- Console summary of energy flows (kWh):  
+  - Grid supply to home and battery  
+  - Total home demand  
+  - Solar energy produced  
+  - Energy fed back to grid  
+
+---
+
+## 📈 Function: `plot_obj_functions`
+
+**🎯 Purpose:**  
+Decomposes and visualizes components of the optimization objective function to analyze grid use, battery and EV use, electricity costs, and SOC penalties.
+
+**📥 Inputs:**  
+- Battery and EV SOC arrays: `x_b`, `x_ev`  
+- Battery and EV power arrays: `P_bat`, `P_ev`  
+- Grid power array: `P_util`  
+- Solar power array: `P_sol`  
+- Home demand array: `P_dem`  
+- Time step size: `dt` (hours)  
+
+**📤 Outputs:**  
+- Multi-panel plots of:  
+  - Grid use penalty  
+  - Electricity cost penalty  
+  - Battery use penalty  
+  - EV use penalty  
+  - Battery SOC penalty (high/low)  
+  - EV SOC penalty (high/low)  
+  - Total objective value over time  
+
+---
+
+## 🚀 Example Usage
+
+```python
+x_b, x_ev, P_bat, P_ev, P_util, P_sol, P_dem = evbm_optimization_v2(optimizer)
+plot_results(x_b, x_ev, P_bat, P_ev, P_util, P_sol, P_dem, optimizer.dt)
+plot_obj_functions(x_b, x_ev, P_bat, P_ev, P_util, P_sol, P_dem, optimizer.dt)
