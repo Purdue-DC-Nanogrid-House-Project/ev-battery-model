@@ -24,6 +24,27 @@ The primary goal is to simulate and optimize energy flow in a smart residential 
 - Analyze seasonal effects and energy use behavior.
 
 ---
+## 📚 Table of Contents
+
+- [📊 Control Volume Diagram](#-control-volume-diagram)
+- [🔁 Iteration Timeline](#-iteration-timeline)
+  - [🔹 Iteration 1: Basic Models](#-iteration-1-basic-models)
+  - [🔹 Iteration 1.1: Utility and Constant Demand](#-iteration-11-utility-and-constant-demand)
+  - [🔹 Iteration 1.2: Solar Integration](#-iteration-12-solar-integration)
+  - [🔹 Iteration 1.3: Optimization Added](#-iteration-13-optimization-added)
+  - [🔹 Iteration 1.4: Varying Demand](#-iteration-14-varying-demand)
+- [⚙️ Iteration 2.0+: Advanced Modeling & Tuning](#️-iteration-20-advanced-modeling--tuning)
+  - [🔹 Iteration 2.1: Refined Battery Models](#-iteration-21-refined-battery-models)
+  - [🔹 Iteration 2.2: Objective Function Tuning](#-iteration-22-objective-function-tuning)
+- [🧠 Technologies Used](#-technologies-used)
+- [🚀 Getting Started](#-getting-started)
+- [🧩 Class Descriptions](#-class-descriptions)
+- [⚡ EVBM Optimization and Visualization Functions](#-evbm-optimization-and-visualization-functions)
+  - [🧮 Function: `evbm_optimization_v2`](#-function-evbm_optimization_v2)
+  - [📊 Function: `plot_results`](#-function-plot_results)
+  - [📈 Function: `plot_obj_functions`](#-function-plot_obj_functions)
+  - [🚀 Example Usage](#-example-usage)
+---
 
 ## 📊 Control Volume Diagram
 
@@ -224,7 +245,7 @@ python main.py
 - Used to pass models and parameters into the optimization function.
 
 ---
-## ⚡ EVBM Optimization and Visualization Functions ⚡
+## ⚡ EVBM Optimization and Visualization Functions 
 
 This project includes three main functions to optimize and visualize energy management integrating battery and EV charging with solar power and home demand.
 
