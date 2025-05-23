@@ -27,13 +27,13 @@ The primary goal is to simulate and optimize energy flow in a smart residential 
 ## 📚 Table of Contents
 
 - [📊 Control Volume Diagram](#-control-volume-diagram)
-- [🔁 Iteration 1](#-iteration-timeline)
-  - [🔹 Basic Models](#-iteration-1-basic-models)
+- [🔁 Iteration 1](#-iteration-1)
+  - [🔹 Basic Models](#-basic-models)
   - [🔹 Iteration 1.1: Utility and Constant Demand](#-iteration-11-utility-and-constant-demand)
   - [🔹 Iteration 1.2: Solar Integration](#-iteration-12-solar-integration)
   - [🔹 Iteration 1.3: Optimization Added](#-iteration-13-optimization-added)
   - [🔹 Iteration 1.4: Varying Demand](#-iteration-14-varying-demand)
-- [⚙️ Iteration 2.0+: Advanced Modeling & Tuning](#️-iteration-20-advanced-modeling--tuning)
+- [⚙️ Iteration 2.0+: Advanced Modeling & Tuning](#-iteration-20-advanced-modeling--tuning)
   - [🔹 Iteration 2.1: Refined Battery Models](#-iteration-21-refined-battery-models)
   - [🔹 Iteration 2.2: Objective Function Tuning](#-iteration-22-objective-function-tuning)
 - [🧠 Technologies Used](#-technologies-used)
@@ -44,6 +44,7 @@ The primary goal is to simulate and optimize energy flow in a smart residential 
   - [📊 Function: `plot_results`](#-function-plot_results)
   - [📈 Function: `plot_obj_functions`](#-function-plot_obj_functions)
   - [🚀 Example Usage](#-example-usage)
+
 ---
 
 ## 📊 Control Volume Diagram
