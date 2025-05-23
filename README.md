@@ -27,8 +27,8 @@ The primary goal is to simulate and optimize energy flow in a smart residential 
 ## 📚 Table of Contents
 
 - [📊 Control Volume Diagram](#-control-volume-diagram)
-- [🔁 Iteration Timeline](#-iteration-timeline)
-  - [🔹 Iteration 1: Basic Models](#-iteration-1-basic-models)
+- [🔁 Iteration 1](#-iteration-timeline)
+  - [🔹 Basic Models](#-iteration-1-basic-models)
   - [🔹 Iteration 1.1: Utility and Constant Demand](#-iteration-11-utility-and-constant-demand)
   - [🔹 Iteration 1.2: Solar Integration](#-iteration-12-solar-integration)
   - [🔹 Iteration 1.3: Optimization Added](#-iteration-13-optimization-added)
@@ -53,9 +53,9 @@ The primary goal is to simulate and optimize energy flow in a smart residential 
 
 ---
 
-## 🔁 Iteration Timeline
+## 🔁 Iteration 1
 
-### 🔹 Iteration 1: Basic Models
+### 🔹 Basic Models
 
 - Static home demand and EV charging.
 - Dynamic battery SOC modeled in Python.
@@ -136,7 +136,7 @@ The primary goal is to simulate and optimize energy flow in a smart residential 
 
 ---
 
-## ⚙️ Iteration 2.0+: Advanced Modeling & Tuning
+## ⚙️ Iteration 2: Advanced Modeling & Tuning
 
 ### 🔹 Iteration 2.1: Refined Battery Models
 
