@@ -1,114 +1,165 @@
-# Electric Vehicle Battery Model (EVBM) Optimization
+# ⚡ Electric Vehicle Battery Model (EVBM) Optimization
 
-This repository contains the simulation and optimization framework for modeling the electric vehicle (EV) charging cycle, home energy demand, solar generation, and bi-directional battery storage using Python. It includes a progression of iterations, starting from simple static models to refined dynamic optimization using control theory and solar data integration.
+This repository contains the simulation and optimization framework for modeling the electric vehicle (EV) charging cycle, home energy demand, solar generation, and bi-directional battery storage using Python. The workflow progresses from basic static models to refined, real-world optimization using control theory and weather-driven solar data.
+
+---
 
 ## 🔍 Project Overview
 
-The objective of this project is to simulate and optimize the power flow in a residential setup involving:
+The primary goal is to simulate and optimize energy flow in a smart residential system integrating:
 
-- An Electric Vehicle (EV)
-- A Battery Storage System
-- A Solar PV Array
-- Home Demand Load
-- Grid/Utility Power
+- 🚗 **Electric Vehicle (EV)**
+- 🔋 **Battery Storage System**
+- ☀️ **Solar PV Array**
+- 🏠 **Home Energy Demand**
+- 🔌 **Grid/Utility Power**
 
-## 📌 Goals
+---
 
-- Develop a dynamic simulation of EV and battery state of charge (SOC).
-- Implement solar data using `pvLib`.
-- Optimize grid usage via `cvxpy`.
-- Validate energy flow and cost-saving effectiveness under seasonal and demand variation.
+## 🎯 Project Goals
+
+- Simulate EV and battery SOC under various energy scenarios.
+- Integrate real solar data via `pvLib`.
+- Implement optimization using `cvxpy` to reduce grid dependency and costs.
+- Analyze seasonal effects and energy use behavior.
+
+---
 
 ## 📊 Control Volume Diagram
 
-![Control Volume](img/control_volume.png)
-
-This control volume illustrates the flow of power between solar panels, the EV, the battery, the grid, and the home.
-
----
-
-## 📈 Iterations
-
-### Iteration 1: Basic Models
-- **Home Demand**: Static
-- **EV Call**: Constant at 5 kW
-- **Battery SOC**: Dynamic
-- ![Iteration 1](img/iteration1_basic_model.png)
+![Control Volume](img/control_volume.png)  
+*Figure: Power flow between system elements—solar panels, EV, battery, grid, and home.*
 
 ---
 
-### Iteration 1.1: Add Constant Utility and Demand
-- Introduced utility calculation as difference between charger output and total demand.
-- Inputs:
-  - Home Demand: 8.0 kW
-  - EV Call: 5.0 kW
-  - SOC EV range: 0.5 - 0.9
-  - Initial Charger SOC: 1.00
-  - ![Iteration 1.1](img/iteration1_1_result.png)
+## 🔁 Iteration Timeline
+
+### 🔹 Iteration 1: Basic Models
+
+- Static home demand and EV charging.
+- Dynamic battery SOC modeled in Python.
+
+![Iteration 1](img/iteration1_basic_model.png)  
+*Figure: Power distribution under basic assumptions with constant demand and EV call.*
 
 ---
 
-### Iteration 1.2: Solar Integration
-- Added `pvLib` for solar modeling using weather data.
-- Seasonal simulation support: Winter, Spring, Summer
-- Inputs:
-  - Home Demand: 15.0 kW
-  - Solar Data: Realistic via `pvLib`
-- ![Solar Winter](img/iteration1_2_winter.png)
-- ![Solar Spring](img/iteration1_2_spring.png)
-- ![Solar Summer](img/iteration1_2_summer.png)
+### 🔹 Iteration 1.1: Utility and Constant Demand
+
+- Grid usage calculated as the gap between charger output and demand.
+- SOC limits applied to EV and battery.
+
+**Input Parameters:**
+
+- Home Demand: 8.0 kW  
+- EV Call: 5.0 kW  
+- EV SOC Range: 0.5 – 0.9  
+- Initial Battery SOC: 1.00  
+
+![Iteration 1.1](img/iteration1_1_result.png)  
+*Figure: SOC and power dynamics with constant utility demand.*
 
 ---
 
-### Iteration 1.3: Optimization Added
-- Introduced `cvxpy` optimization to minimize utility power.
-- Control Variables: Charger Power (`P_bat`), EV Power (`P_ev`)
-- Inputs: Demand (`P_dem`), Initial SOCs
-- ![Optimization](img/iteration1_3.png)
+### 🔹 Iteration 1.2: Solar Integration
+
+- Solar modeled using `pvLib` and NOAA weather datasets.
+- Seasonal simulations: Winter, Spring, Summer.
+
+**Input Parameters:**
+
+- Home Demand: 15.0 kW  
+- Realistic solar generation using date-specific weather data.
+
+**Seasonal Plots:**
+
+![Winter Solar](img/iteration1_2_winter.png)  
+*Figure: Winter simulation with low solar output.*
+
+![Spring Solar](img/iteration1_2_spring.png)  
+*Figure: Spring simulation with moderate solar generation.*
+
+![Summer Solar](img/iteration1_2_summer.png)  
+*Figure: Summer simulation with peak solar availability.*
 
 ---
 
-### Iteration 1.4: Varying Demand
-- Added date-specific demand and solar variations.
-- Identified issues of excess feedback to the grid.
-- Energy Flow Summary:
-  - Grid Supplied: 31.13 kWh
-  - Home Demand: 92.71 kWh
-  - Solar Produced: 91.70 kWh
-  - Feedback to Grid: 30.19 kWh
-  - ![Varying Demand](img/iteration1_4.png)
+### 🔹 Iteration 1.3: Optimization Added
+
+- Introduced convex optimization (`cvxpy`).
+- Goal: Minimize utility power draw while satisfying EV and battery constraints.
+
+**Control Variables:**  
+- `P_bat` – Battery power  
+- `P_ev` – EV power
+
+![Optimization](img/iteration1_3.png)  
+*Figure: Optimized energy flows reducing utility dependency.*
 
 ---
 
-## ⚙️ Iteration 2.0+: Advanced Optimization
+### 🔹 Iteration 1.4: Varying Demand
 
-### Iteration 2.1: Refined Battery Models
-- Tuned battery models and validated with graph plots.
-- ![Battery Tuning](img/iteration2_1_tuned_models.png)
-- ![Efficiency Tuning](img/iteration2_1_tuned_eff.png)
+- Added temporal variations to home demand and solar output.
+- Highlighted issues with excess grid feedback.
 
-### Iteration 2.2: Objective Function Tuning
-- Added Time-of-Use (ToU) cost modeling.
-- Introduced constraints for:
-  - EV departure/arrival SOC
-  - Feedback to grid penalties
-  - SOC soft bounds (0.2 – 0.8)
-- Updated Energy Flow Summary:
-  - Grid Supplied: 33.42 kWh
-  - Feedback: 29.81 kWh
+**Energy Flow Summary:**
 
-- ![Tuned Optimization Power](img/iteration2_2_optimized_power.png)
-- ![Tuned Optimization SOC](img/iteration2_2_optimized_soc.png)
+- Grid Supplied: 31.13 kWh  
+- Total Demand: 92.71 kWh  
+- Solar Generated: 91.70 kWh  
+- Fed Back to Grid: 30.19 kWh  
 
-- Validated Objective Function with graphs
-  - ![Objective Function Validation](img/iteration2_2_objective_func.png)
+![Varying Demand](img/iteration1_4.png)  
+*Figure: Overgeneration identified as key inefficiency.*
+
+---
+
+## ⚙️ Iteration 2.0+: Advanced Modeling & Tuning
+
+### 🔹 Iteration 2.1: Refined Battery Models
+
+- Tuned system matrices for battery behavior.
+- Improved SOC curve predictions.
+
+![Battery Tuning](img/iteration2_1_tuned_models.png)  
+*Figure: SOC tracking with improved battery model.*
+
+![Efficiency Tuning](img/iteration2_1_tuned_eff.png)  
+*Figure: Battery charge/discharge efficiency refinement.*
+
+---
+
+### 🔹 Iteration 2.2: Objective Function Tuning
+
+- Introduced time-of-use (ToU) cost factors.
+- EV plug-in schedule modeled using departure/arrival windows.
+- Soft constraints on SOC limits.
+
+**Updated Energy Flow Summary:**
+
+- Grid Supplied: 33.42 kWh  
+- Solar Generated: 91.70 kWh  
+- Feedback to Grid: 29.81 kWh  
+
+**Graphs:**
+
+![Tuned Optimization Power](img/iteration2_2_optimized_power.png)  
+*Figure: Smoothed power profile after tuning cost-sensitive objective.*
+
+![Tuned Optimization SOC](img/iteration2_2_optimized_soc.png)  
+*Figure: SOC evolution of EV and battery under optimized constraints.*
+
+![Objective Function Validation](img/iteration2_2_objective_func.png)  
+*Figure: Visual validation of objective behavior.*
 
 ---
 
 ## 🧠 Technologies Used
 
-- Python 3.x
-- `cvxpy` – convex optimization
-- `pvLib` – solar modeling
+- Python 3.x  
+- [`cvxpy`](https://www.cvxpy.org/) – convex optimization  
+- [`pvLib`](https://pvlib-python.readthedocs.io/) – solar power modeling  
 - `numpy`, `pandas`, `matplotlib`
 
+---
