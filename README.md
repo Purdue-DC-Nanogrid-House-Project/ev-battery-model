@@ -163,3 +163,43 @@ The primary goal is to simulate and optimize energy flow in a smart residential 
 - `numpy`, `pandas`, `matplotlib`
 
 ---
+
+## 🚀 Getting Started
+
+To run this project on your local machine:
+
+### 1️⃣ Clone the Repository
+```bash
+git clone https://github.com/Purdue-DC-Nanogrid-House-Project/ev-battery-model.git
+cd src
+```
+
+### 2️⃣ Set Up the Environment
+```bash
+conda env create -f requirements.yaml
+conda activate evbm
+```
+
+3️⃣ Project Structure
+```bash
+.
+├── data/                    # Demand profiles, weather data, etc.
+├── img/                     # Graphs and figures used in README
+├── src/
+│   ├── evbm_optimization.py  # Main optimization script
+│   └── args_handler.py       # Custom CLI argument parser
+├── README.md
+└── requirements.yaml
+```
+
+4️⃣ Run the Optimization
+Example using default test conditions:
+
+```bash
+cd src
+python main.py
+```
+
+📌 Use --help with any script to see the available options:
+
+---
