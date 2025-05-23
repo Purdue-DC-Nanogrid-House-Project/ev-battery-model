@@ -224,13 +224,13 @@ python main.py
 - Used to pass models and parameters into the optimization function.
 
 ---
-# ⚡ EVBM Optimization and Visualization Functions ⚡
+## ⚡ EVBM Optimization and Visualization Functions ⚡
 
 This project includes three main functions to optimize and visualize energy management integrating battery and EV charging with solar power and home demand.
 
 ---
 
-## 🧮 Function: `evbm_optimization_v2`
+### 🧮 Function: `evbm_optimization_v2`
 
 **🎯 Purpose:**  
 Performs convex optimization to minimize grid energy costs and manage power flows among battery, EV, solar generation, home demand, and utility grid over a 24-hour horizon.
@@ -256,7 +256,7 @@ Performs convex optimization to minimize grid energy costs and manage power flow
 
 ---
 
-## 📊 Function: `plot_results`
+### 📊 Function: `plot_results`
 
 **🎯 Purpose:**  
 Visualizes optimization results, including SOC curves, power flows, and energy flow summaries.
@@ -279,7 +279,7 @@ Visualizes optimization results, including SOC curves, power flows, and energy f
 
 ---
 
-## 📈 Function: `plot_obj_functions`
+### 📈 Function: `plot_obj_functions`
 
 **🎯 Purpose:**  
 Decomposes and visualizes components of the optimization objective function to analyze grid use, battery and EV use, electricity costs, and SOC penalties.
@@ -304,7 +304,7 @@ Decomposes and visualizes components of the optimization objective function to a
 
 ---
 
-## 🚀 Example Usage
+### 🚀 Example Usage
 
 ```python
 x_b, x_ev, P_bat, P_ev, P_util, P_sol, P_dem = evbm_optimization_v2(optimizer)
