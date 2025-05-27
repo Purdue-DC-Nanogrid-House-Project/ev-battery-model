@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import cvxpy as cp
 import numpy as np
+import os
 
 def test_ev_charging(ev_model, battery_model, initial_charge, target_charge):
     # Convert percentages to state of charge (SoC) in kWh for ev
@@ -559,7 +560,7 @@ def evbm_optimization_v2(optimizer):
 
     return x_b.value, x_ev.value, P_bat.value, P_ev.value, P_util.value, P_sol, P_dem
 
-def plot_results(x_b,x_ev, P_bat,P_ev,P_util, P_sol, P_dem, dt):
+def plot_results(x_b,x_ev, P_bat,P_ev,P_util, P_sol, P_dem, dt,day):
     # Convert arrays to 1D
     P_util = np.squeeze(P_util)
     x_b = np.squeeze(x_b)[:-1]  # Trim last value of x_b to match other arrays
@@ -588,6 +589,7 @@ def plot_results(x_b,x_ev, P_bat,P_ev,P_util, P_sol, P_dem, dt):
     E_home_demand = np.sum(P_dem) * dt
     E_solar_generated = np.sum(P_sol) * dt
     E_fed_to_grid = -np.sum(P_util[P_util < 0]) * dt  # negative values, so negate
+    safe_day = day.replace("/", "-")
 
     print("\n=== Energy Flow Summary (kWh) ===")
     print(f"1. Grid supplied to Home/Battery: {E_grid_to_home:.2f} kWh")
@@ -601,10 +603,11 @@ def plot_results(x_b,x_ev, P_bat,P_ev,P_util, P_sol, P_dem, dt):
     plt.plot(time, x_ev, label="State of Charge (SOC) EV", color="grey", linestyle='-', linewidth=2)
     plt.xlabel("Time (hours)")
     plt.ylabel("State of Charge (%)")
-    plt.title("Battery and EV State of Charge (SOC) over Time")
+    plt.title(f"Battery and EV State of Charge (SOC) over Time on {day}")
     plt.grid(True)
     plt.legend(loc="best")
     plt.tight_layout()
+    plt.savefig(os.path.join("plots", f"soc_plot_{safe_day}.png"))
 
     # Plot Power Data (Utility, Battery, Solar, Demand, and Conservation)
     plt.figure(figsize=(10, 6))
@@ -616,42 +619,42 @@ def plot_results(x_b,x_ev, P_bat,P_ev,P_util, P_sol, P_dem, dt):
     plt.plot(time, P_tot, label="Power Conservation (P_tot)", color="red", linestyle='-', linewidth=2)
     plt.xlabel("Time (hours)")
     plt.ylabel("Power (kW)")
-    plt.title("Utility Power, Battery Power,EV_Power,Solar Power, Demand, and Power Conservation")
+    plt.title(f"Utility Power, Battery Power, EV Power, Solar Power, Demand, and Power Conservation on {day}")
     plt.grid(True)
     plt.legend(loc="best")
     plt.tight_layout()
+    plt.savefig(os.path.join("plots", f"power_flow_plot_{safe_day}.png"))
 
-    fig1, axs1 = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
-    # Battery SOC
-    axs1[0].plot(time, x_b, label="State of Charge (SOC) Battery", color="r", linewidth=2)
-    axs1[0].set_ylabel("SOC (%)")
-    axs1[0].set_title("Battery: State of Charge (SOC) and Power")
-    axs1[0].grid(True)
-    axs1[0].legend(loc="best")
-    # Battery Power
-    axs1[1].plot(time, P_bat, label="Battery Power (P_bat)", color="g", linewidth=2)
-    axs1[1].set_xlabel("Time (hours)")
-    axs1[1].set_ylabel("Power (kW)")
-    axs1[1].grid(True)
-    axs1[1].legend(loc="best")
-    plt.tight_layout()
+    ## Verify Power conservation
+    # fig1, axs1 = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
+    # # Battery SOC
+    # axs1[0].plot(time, x_b, label="State of Charge (SOC) Battery", color="r", linewidth=2)
+    # axs1[0].set_ylabel("SOC (%)")
+    # axs1[0].set_title("Battery: State of Charge (SOC) and Power")
+    # axs1[0].grid(True)
+    # axs1[0].legend(loc="best")
+    # # Battery Power
+    # axs1[1].plot(time, P_bat, label="Battery Power (P_bat)", color="g", linewidth=2)
+    # axs1[1].set_xlabel("Time (hours)")
+    # axs1[1].set_ylabel("Power (kW)")
+    # axs1[1].grid(True)
+    # axs1[1].legend(loc="best")
+    # plt.tight_layout()
 
-    fig2, axs2 = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
-    # EV SOC
-    axs2[0].plot(time, x_ev, label="State of Charge (SOC) EV", color="grey", linewidth=2)
-    axs2[0].set_ylabel("SOC (%)")
-    axs2[0].set_title("EV: State of Charge (SOC) and Power")
-    axs2[0].grid(True)
-    axs2[0].legend(loc="best")
-    # EV Power
-    axs2[1].plot(time, P_ev, label="EV Power (P_ev)", color="black", linewidth=2)
-    axs2[1].set_xlabel("Time (hours)")
-    axs2[1].set_ylabel("Power (kW)")
-    axs2[1].grid(True)
-    axs2[1].legend(loc="best")
-    plt.tight_layout()
-
-
+    # fig2, axs2 = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
+    # # EV SOC
+    # axs2[0].plot(time, x_ev, label="State of Charge (SOC) EV", color="grey", linewidth=2)
+    # axs2[0].set_ylabel("SOC (%)")
+    # axs2[0].set_title("EV: State of Charge (SOC) and Power")
+    # axs2[0].grid(True)
+    # axs2[0].legend(loc="best")
+    # # EV Power
+    # axs2[1].plot(time, P_ev, label="EV Power (P_ev)", color="black", linewidth=2)
+    # axs2[1].set_xlabel("Time (hours)")
+    # axs2[1].set_ylabel("Power (kW)")
+    # axs2[1].grid(True)
+    # axs2[1].legend(loc="best")
+    # plt.tight_layout()
     plt.show()
 
 def plot_obj_functions(x_b,x_ev, P_bat,P_ev,P_util, P_sol, P_dem, dt):

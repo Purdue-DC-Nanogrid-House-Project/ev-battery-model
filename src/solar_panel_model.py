@@ -5,17 +5,20 @@ from pvlib.location import Location
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import numpy as np
+from datetime import datetime,timedelta
 
 class SolarPanelModel:
-    def __init__(self,dt,pdc0,v_mp,i_mp,v_oc,i_sc,alpha_sc,beta_oc,gamma_pdc,latitude,longitude):
+    def __init__(self,dt,day,pdc0,v_mp,i_mp,v_oc,i_sc,alpha_sc,beta_oc,gamma_pdc,latitude,longitude):
         # Location Paramaters
         self.latitude = latitude # Latitude Co-ordinate of Solar Panel Location (deg)
         self.longitude = longitude # Longitude Co-ordinate of Solar Panel Location (deg)
+        self.day = day
 
         # Weather Parameters
         weather_path = 'data/HistoricalWeather.csv'
-        self.start_time = '2024-06-15 00:00:00'
-        self.end_time = '2024-06-16 00:00:00'
+        self.start_time,self.end_time = self.date_format()
+        # self.start_time = '2024-06-15 00:00:00'
+        # self.end_time = '2024-06-16 00:00:00'
         self.weather = self.load_weather_data(weather_path,self.start_time,self.end_time)
 
         # Define module parameters for Panasonic VBHN325KA03
@@ -101,5 +104,11 @@ class SolarPanelModel:
         weather_data = weather_data[start_time:end_time]
         return weather_data
         
+    def date_format(self):
+        day_str = datetime.strptime(self.day, '%m/%d/%Y')
+        start_time = day_str.strftime('%Y-%m-%d 00:00:00')
+        end_time = (day_str + timedelta(days=1)).strftime('%Y-%m-%d 00:00:00')
+        # print(start_time,end_time)
+        return start_time, end_time
 if __name__ == "__main__":
     dt = 1.0

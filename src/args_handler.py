@@ -71,6 +71,9 @@ def args_handler():
     # Display Parameters
     parser.add_argument('--check_params',type=bool, default=False, help='Check Parameters [True/False]')
 
+    # Day Parameters
+    parser.add_argument('--day',type=str,default='6/15/2024',help = 'Day of test [e.g. 6/15/2024]')
+
     args = parser.parse_args()
     return args
 

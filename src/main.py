@@ -103,12 +103,14 @@ def main():
 
     # Create Home Model Instance
     home_model = HomeModel(
-        dt = dt
+        dt = dt,
+        day = model_args.day
     )
 
     # Create Solar Panel Model Instance
     solar_model = SolarPanelModel(
         dt = dt,
+        day = model_args.day,
         pdc0 = model_args.pdc0, 
         v_mp = model_args.v_mp, 
         i_mp= model_args.i_mp,
@@ -163,7 +165,7 @@ def main():
 
     # # Run test case of optimizer with just Utility
     [x_b,x_ev,P_bat,P_ev,P_util, P_sol,P_dem] = evbm_optimization_v2(optimizer)
-    plot_results(x_b,x_ev,P_bat,P_ev,P_util,P_sol,P_dem,dt)
+    plot_results(x_b,x_ev,P_bat,P_ev,P_util,P_sol,P_dem,dt,model_args.day)
     plot_obj_functions(x_b,x_ev,P_bat,P_ev,P_util,P_sol,P_dem,dt)
     
 
