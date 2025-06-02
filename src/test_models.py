@@ -3,6 +3,7 @@ import pandas as pd
 import cvxpy as cp
 import numpy as np
 import os
+import re
 
 def test_ev_charging(ev_model, battery_model, initial_charge, target_charge):
     # Convert percentages to state of charge (SoC) in kWh for ev
@@ -540,16 +541,19 @@ def evbm_optimization_v2(optimizer):
     # Objective function 
     objective = cp.Minimize(
         cp.sum(
-                1000 * cp.norm(optimizer.dt * P_util, 2) +                      # moderate penalty on total grid use
-                5 * cp.norm(optimizer.dt * P_bat, 2) +                        # low penalty on battery use
-                5 * cp.norm(optimizer.dt * P_ev, 2)+                          # low penalty on EV use
-                #Add derivative limiter for battery and ev (try just this alone as well and then add it to that as well)
+                900 * cp.norm(optimizer.dt * P_util, 2) +                      # moderate penalty on total grid use
+                # 5 * cp.norm(optimizer.dt * P_bat, 2) +                        # low penalty on battery use
+                # 5 * cp.norm(optimizer.dt * P_ev, 2)+                          # low penalty on EV use
+
+                50 * cp.norm(P_bat[:, 1:] - P_bat[:, :-1], 2)+                 # penalize sudden changes in Battery power
+                50 * cp.norm(P_ev[:, 1:] - P_ev[:, :-1], 2)+                   # penalize sudden changes in EV power
+
                 10*optimizer.dt * cp.maximum(0, cp.multiply(c_elec, P_util))+   # keep energy cost awareness
 
-                10*optimizer.dt * cp.maximum(0, x_b[:, :optimizer.K] - 0.8) +     # soft constraints on SOC
+                10*optimizer.dt * cp.maximum(0, x_b[:, :optimizer.K] - 0.8) +   # soft constraints on Battery SOC
                 10*optimizer.dt * cp.maximum(0, 0.2 - x_b[:, :optimizer.K]) +
                 
-                10*optimizer.dt * cp.maximum(0, x_ev[:, :optimizer.K] - 0.8) +     # soft constraints on SOC
+                10*optimizer.dt * cp.maximum(0, x_ev[:, :optimizer.K] - 0.8) +  # soft constraints on EV SOC
                 10*optimizer.dt * cp.maximum(0, 0.2 - x_ev[:, :optimizer.K])
                 
         )
@@ -561,70 +565,88 @@ def evbm_optimization_v2(optimizer):
 
     return x_b.value, x_ev.value, P_bat.value, P_ev.value, P_util.value, P_sol, P_dem
 
-def plot_results(x_b,x_ev, P_bat,P_ev,P_util, P_sol, P_dem, dt,day):
-    # Convert arrays to 1D
+def plot_results(x_b, x_ev, P_bat, P_ev, P_util, P_sol, P_dem, dt, day, run_id=None):
+    safe_day = day.replace("/", "-")
+    if run_id is None:
+        run_id = safe_day
+
+    # Base folder name pattern
+    base_dir = "plots"
+    base_name = f"run_{run_id}"
+    version = 1
+    folder_name = f"{base_name}_v{version}"
+    folder_path = os.path.join(base_dir, folder_name)
+
+    # Scan existing folders to find max version
+    existing_folders = [name for name in os.listdir(base_dir) if re.match(rf"{re.escape(base_name)}_v\d+$", name)]
+    if existing_folders:
+        # Extract version numbers
+        versions = [int(re.search(r"_v(\d+)$", name).group(1)) for name in existing_folders]
+        version = max(versions) + 1
+        folder_name = f"{base_name}_v{version}"
+        folder_path = os.path.join(base_dir, folder_name)
+
+    os.makedirs(folder_path)
+
+    # Convert arrays to 1D and align dimensions
     P_util = np.squeeze(P_util)
-    x_b = np.squeeze(x_b)[:-1]  # Trim last value of x_b to match other arrays
+    x_b = np.squeeze(x_b)[:-1]
     x_ev = np.squeeze(x_ev)[:-1]
     P_bat = np.squeeze(P_bat)
     P_ev = np.squeeze(P_ev)
     P_sol = np.squeeze(P_sol)
     P_dem = np.squeeze(P_dem)
     
-    # Create time vector
     time = np.arange(0, len(P_util) * dt, dt)
-    # Compute Power Conservation Variable
-    P_tot = -P_util + P_dem + P_bat - P_sol + P_ev  # Power balance check
+    P_tot = -P_util + P_dem + P_bat - P_sol + P_ev  # Power conservation check
 
-    # # Check shapes
-    # print("Time shape:", time.shape)
-    # print("x_b shape:", x_b.shape)
-    # print("P_util shape:", P_util.shape)
-    # print("P_bat shape:", P_bat.shape)
-    # print("P_ev shape:", P_ev.shape)
-    # print("P_sol shape:", P_sol.shape)
-    # print("P_dem shape:", P_dem.shape)
-    # print("P_tot shape:", P_tot.shape)  # Ensure shape consistency
-
+    # Energy metrics
     E_grid_to_home = np.sum(P_util[P_util > 0]) * dt
     E_home_demand = np.sum(P_dem) * dt
     E_solar_generated = np.sum(P_sol) * dt
-    E_fed_to_grid = -np.sum(P_util[P_util < 0]) * dt  # negative values, so negate
-    safe_day = day.replace("/", "-")
+    E_fed_to_grid = -np.sum(P_util[P_util < 0]) * dt
 
-    print("\n=== Energy Flow Summary (kWh) ===")
-    print(f"1. Grid supplied to Home/Battery: {E_grid_to_home:.2f} kWh")
-    print(f"2. Total Home Demand:             {E_home_demand:.2f} kWh")
-    print(f"3. Solar Energy Produced:         {E_solar_generated:.2f} kWh")
-    print(f"4. Energy Fed Back to Grid:       {E_fed_to_grid:.2f} kWh")
+    # Save energy summary to text file
+    energy_summary = (
+        f"=== Energy Flow Summary for {day} ===\n"
+        f"1. Grid supplied to Home/Battery: {E_grid_to_home:.2f} kWh\n"
+        f"2. Total Home Demand:             {E_home_demand:.2f} kWh\n"
+        f"3. Solar Energy Produced:         {E_solar_generated:.2f} kWh\n"
+        f"4. Energy Fed Back to Grid:       {E_fed_to_grid:.2f} kWh\n"
+    )
+    print(energy_summary)
+    with open(os.path.join(folder_path, "energy_summary.txt"), "w") as f:
+        f.write(energy_summary)
 
-    # Plot Battery State of Charge (SOC)
+    # Plot SOC
     plt.figure(figsize=(10, 6))
-    plt.plot(time, x_b, label="State of Charge (SOC Battery", color="r", linestyle='-', linewidth=2)
-    plt.plot(time, x_ev, label="State of Charge (SOC) EV", color="grey", linestyle='-', linewidth=2)
+    plt.plot(time, x_b, label="SOC Battery", color="r", linewidth=2)
+    plt.plot(time, x_ev, label="SOC EV", color="grey", linewidth=2)
     plt.xlabel("Time (hours)")
     plt.ylabel("State of Charge (%)")
-    plt.title(f"Battery and EV State of Charge (SOC) over Time on {day}")
+    plt.title(f"SOC of Battery and EV on {day}")
     plt.grid(True)
-    plt.legend(loc="best")
+    plt.legend()
     plt.tight_layout()
-    plt.savefig(os.path.join("plots", f"soc_plot_{safe_day}.png"))
+    plt.savefig(os.path.join(folder_path, "soc_plot.png"))
+    plt.close()
 
-    # Plot Power Data (Utility, Battery, Solar, Demand, and Conservation)
+    # Plot Power Flows
     plt.figure(figsize=(10, 6))
-    plt.plot(time, P_util, label="Utility Power (P_util)", color="b", linestyle='-', linewidth=2)
-    plt.plot(time, P_bat, label="Battery Power (P_bat)", color="g", linestyle='-', linewidth=2)
-    plt.plot(time, P_ev, label="EV Power (P_ev)", color="black", linestyle='-', linewidth=2)
-    plt.plot(time, P_sol, label="Solar Power (P_sol)", color="orange", linestyle='-', linewidth=2)
-    plt.plot(time, P_dem, label="Demand", color="purple", linestyle='-', linewidth=2)
-    plt.plot(time, P_tot, label="Power Conservation (P_tot)", color="red", linestyle='-', linewidth=2)
+    plt.plot(time, P_util, label="Utility Power (P_util)", color="b", linewidth=2)
+    plt.plot(time, P_bat, label="Battery Power (P_bat)", color="g", linewidth=2)
+    plt.plot(time, P_ev, label="EV Power (P_ev)", color="black", linewidth=2)
+    plt.plot(time, P_sol, label="Solar Power (P_sol)", color="orange", linewidth=2)
+    plt.plot(time, P_dem, label="Demand", color="purple", linewidth=2)
+    plt.plot(time, P_tot, label="Power Conservation (P_tot)", color="red", linestyle='--', linewidth=2)
     plt.xlabel("Time (hours)")
     plt.ylabel("Power (kW)")
-    plt.title(f"Utility Power, Battery Power, EV Power, Solar Power, Demand, and Power Conservation on {day}")
+    plt.title(f"Power Flows and Conservation Check on {day}")
     plt.grid(True)
-    plt.legend(loc="best")
+    plt.legend()
     plt.tight_layout()
-    plt.savefig(os.path.join("plots", f"power_flow_plot_{safe_day}.png"))
+    plt.savefig(os.path.join(folder_path, "power_flow_plot.png"))
+    plt.close()
 
     ## Verify Power conservation
     # fig1, axs1 = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
@@ -656,7 +678,7 @@ def plot_results(x_b,x_ev, P_bat,P_ev,P_util, P_sol, P_dem, dt,day):
     # axs2[1].grid(True)
     # axs2[1].legend(loc="best")
     # plt.tight_layout()
-    plt.show()
+
 
 def plot_obj_functions(x_b,x_ev, P_bat,P_ev,P_util, P_sol, P_dem, dt):
     # Convert arrays to 1D
