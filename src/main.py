@@ -10,7 +10,7 @@ from solar_panel_model import SolarPanelModel # Import SolarPanelModel Class
 from optimizer  import Optimizer #Import Optimizer Class
 
 # Import the test function
-from test_models import evbm_optimization_v2,plot_results,plot_obj_functions 
+from test_models import evbm_optimization_v2,plot_results,plot_obj_functions,plot_inputs
 
 # Set up logging configuration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -166,7 +166,8 @@ def main():
     # # Run test case of optimizer with just Utility
     [x_b,x_ev,P_bat,P_ev,P_util, P_sol,P_dem] = evbm_optimization_v2(optimizer)
     plot_results(x_b,x_ev,P_bat,P_ev,P_util,P_sol,P_dem,dt,model_args.day)
-    plot_obj_functions(x_b,x_ev,P_bat,P_ev,P_util,P_sol,P_dem,dt)
+    # plot_obj_functions(x_b,x_ev,P_bat,P_ev,P_util,P_sol,P_dem,dt)
+    # plot_inputs(P_sol,P_dem,dt,model_args.day)
     
 
 if __name__ == "__main__":

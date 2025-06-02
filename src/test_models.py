@@ -541,8 +541,9 @@ def evbm_optimization_v2(optimizer):
     objective = cp.Minimize(
         cp.sum(
                 1000 * cp.norm(optimizer.dt * P_util, 2) +                      # moderate penalty on total grid use
-                0.01 * cp.norm(optimizer.dt * P_bat, 2) +                        # low penalty on battery use
-                0.01 * cp.norm(optimizer.dt * P_ev, 2)+                          # low penalty on EV use
+                5 * cp.norm(optimizer.dt * P_bat, 2) +                        # low penalty on battery use
+                5 * cp.norm(optimizer.dt * P_ev, 2)+                          # low penalty on EV use
+                #Add derivative limiter for battery and ev (try just this alone as well and then add it to that as well)
                 10*optimizer.dt * cp.maximum(0, cp.multiply(c_elec, P_util))+   # keep energy cost awareness
 
                 10*optimizer.dt * cp.maximum(0, x_b[:, :optimizer.K] - 0.8) +     # soft constraints on SOC
@@ -732,5 +733,24 @@ def plot_obj_functions(x_b,x_ev, P_bat,P_ev,P_util, P_sol, P_dem, dt):
     plt.xlabel("Time (s)")
     plt.grid()
 
+    plt.tight_layout()
+    plt.show()
+
+def plot_inputs(P_sol, P_dem, dt,day):
+    # Convert arrays to 1D
+    P_sol = np.squeeze(P_sol)
+    P_dem = np.squeeze(P_dem)
+
+    time = np.arange(0, len(P_sol) * dt, dt)
+    # Plot Power Data (Utility, Battery, Solar, Demand, and Conservation)
+    plt.figure(figsize=(10, 6))
+    plt.plot(time, P_sol, label="Solar Power (P_sol)", color="orange", linestyle='-', linewidth=2)
+    plt.plot(time, P_dem, label="Demand", color="purple", linestyle='-', linewidth=2)
+    plt.xlabel("Time (hours)")
+    plt.ylabel("Power (kW)")
+    plt.title(f"Inputs on {day}")
+    plt.grid(True)
+    plt.legend(loc="best")
+    plt.tight_layout()
     plt.tight_layout()
     plt.show()
