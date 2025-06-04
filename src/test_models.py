@@ -541,12 +541,12 @@ def evbm_optimization_v2(optimizer):
     # Objective function 
     objective = cp.Minimize(
         cp.sum(
-                900 * cp.norm(optimizer.dt * P_util, 2) +                      # moderate penalty on total grid use
+                5200 * cp.norm(optimizer.dt * P_util, 2) +                      # moderate penalty on total grid use
                 # 5 * cp.norm(optimizer.dt * P_bat, 2) +                        # low penalty on battery use
                 # 5 * cp.norm(optimizer.dt * P_ev, 2)+                          # low penalty on EV use
 
-                50 * cp.norm(P_bat[:, 1:] - P_bat[:, :-1], 2)+                 # penalize sudden changes in Battery power
-                50 * cp.norm(P_ev[:, 1:] - P_ev[:, :-1], 2)+                   # penalize sudden changes in EV power
+                50 * cp.norm(P_bat[:, 1:] - P_bat[:, :-1], 2) +                 # penalize sudden changes in Battery power
+                50 * cp.norm(P_ev[:, 1:] - P_ev[:, :-1], 2) +                   # penalize sudden changes in EV power
 
                 10*optimizer.dt * cp.maximum(0, cp.multiply(c_elec, P_util))+   # keep energy cost awareness
 
@@ -605,6 +605,7 @@ def plot_results(x_b, x_ev, P_bat, P_ev, P_util, P_sol, P_dem, dt, day, run_id=N
     E_home_demand = np.sum(P_dem) * dt
     E_solar_generated = np.sum(P_sol) * dt
     E_fed_to_grid = -np.sum(P_util[P_util < 0]) * dt
+    save_metrics(5200,E_grid_to_home,E_fed_to_grid)
 
     # Save energy summary to text file
     energy_summary = (
@@ -678,7 +679,6 @@ def plot_results(x_b, x_ev, P_bat, P_ev, P_util, P_sol, P_dem, dt, day, run_id=N
     # axs2[1].grid(True)
     # axs2[1].legend(loc="best")
     # plt.tight_layout()
-
 
 def plot_obj_functions(x_b,x_ev, P_bat,P_ev,P_util, P_sol, P_dem, dt):
     # Convert arrays to 1D
@@ -776,3 +776,21 @@ def plot_inputs(P_sol, P_dem, dt,day):
     plt.tight_layout()
     plt.tight_layout()
     plt.show()
+
+
+def save_metrics(weight, E_grid_home, E_back_feed):
+    filename = os.path.join('data', 'metrics.csv')
+    
+    new_data = pd.DataFrame([{
+        'Weight': weight,
+        'E_grid_home': E_grid_home,
+        'E_back_feed': E_back_feed
+    }])
+
+    if os.path.exists(filename):
+        df = pd.read_csv(filename)
+        df = pd.concat([df, new_data], ignore_index=True)
+    else:
+        df = new_data
+
+    df.to_csv(filename, index=False)
