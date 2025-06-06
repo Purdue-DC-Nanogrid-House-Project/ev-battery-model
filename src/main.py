@@ -162,13 +162,23 @@ def main():
     # Run test case with Utility, Home, and Solar
     #home_model.demand = 15 #(kW), EV call for 5.0 (kW) [Max]
     #test_ev_charging_v3(ev_model,charger_model,home_model,utility_model,solar_model,initial_charge_pre=0.8, initial_charge_post=0.6, target_charge= 1.0)
-
-    # # Run test case of optimizer with just Utility
-    [x_b,x_ev,P_bat,P_ev,P_util, P_sol,P_dem] = evbm_optimization_v2(optimizer)
-    plot_results(x_b,x_ev,P_bat,P_ev,P_util,P_sol,P_dem,dt,model_args.day)
+    # [x_b,x_ev,P_bat,P_ev,P_util, P_sol,P_dem] = evbm_optimization_v2(optimizer,975)
+    # plot_results(x_b,x_ev,P_bat,P_ev,P_util,P_sol,P_dem,dt,model_args.day,975)
     # plot_obj_functions(x_b,x_ev,P_bat,P_ev,P_util,P_sol,P_dem,dt)
     # plot_inputs(P_sol,P_dem,dt,model_args.day)
     
+    start_weight = 900
+    end_weight = 1000
+    increment = 5
+
+    for weight in range(start_weight, end_weight + 1, increment):
+        logging.info(f"Running optimization for weight = {weight}")
+        [x_b, x_ev, P_bat, P_ev, P_util, P_sol, P_dem] = evbm_optimization_v2(optimizer, weight)
+        
+        # You can also save or label plots by weight
+        plot_results(x_b, x_ev, P_bat, P_ev, P_util, P_sol, P_dem, dt, model_args.day, weight)
+        # plot_obj_functions(x_b, x_ev, P_bat, P_ev, P_util, P_sol, P_dem, dt)
+        # plot_inputs(P_sol, P_dem, dt, model_args.day)
 
 if __name__ == "__main__":
     main()
