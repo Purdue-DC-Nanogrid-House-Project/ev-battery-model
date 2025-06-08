@@ -1,0 +1,5 @@
+=== Energy Flow Summary for 4/01/2024 ===
+1. Grid supplied to Home/Battery: 81.79 kWh
+2. Total Home Demand:             105.78 kWh
+3. Solar Energy Produced:         24.61 kWh
+4. Energy Fed Back to Grid:       -0.00 kWh

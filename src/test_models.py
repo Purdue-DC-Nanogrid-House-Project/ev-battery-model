@@ -516,7 +516,7 @@ def evbm_optimization_v2(optimizer,weight):
         x_ev[0, 0] == optimizer.x0_ev,
         x_ev[0,K_leave] == 0.8,# move to soft constraints
         x_ev[0,K_arrive] == 0.2,
-        P_ev[K_leave:K_arrive] == 0,
+        # P_ev[K_leave:K_arrive] == 0, #caused a shit ton of problems 
         x_ev[:, 1:optimizer.K+1] == optimizer.ev_model.sys_d.A @ x_ev[:, :optimizer.K] +
                             optimizer.ev_model.sys_d.B @ P_ev.T,
 
@@ -540,30 +540,29 @@ def evbm_optimization_v2(optimizer,weight):
 
     # Objective function 
     objective = cp.Minimize(
-        cp.sum(
-                weight * cp.norm(optimizer.dt * P_util, 2) +                       # moderate penalty on total grid use
-                # 5 * cp.norm(optimizer.dt * P_bat, 2) +                        # low penalty on battery use
-                # 5 * cp.norm(optimizer.dt * P_ev, 2)+                          # low penalty on EV use
+        cp.sum(                
+                weight * cp.norm(optimizer.dt * P_util, 2) +                        # moderate penalty on total grid use
+                # 5 * cp.norm(optimizer.dt * P_bat, 2) +                            # low penalty on battery use
+                # 5 * cp.norm(optimizer.dt * P_ev, 2)+                              # low penalty on EV use
 
-                50 * cp.norm(P_bat[:, 1:] - P_bat[:, :-1], 2) +                 # penalize sudden changes in Battery power
-                50 * cp.norm(P_ev[:, 1:] - P_ev[:, :-1], 2) +                   # penalize sudden changes in EV power
+                50 * cp.norm(P_bat[:, 1:] - P_bat[:, :-1], 2) +                     # penalize sudden changes in Battery power
+                50 * cp.norm(P_ev[:, 1:] - P_ev[:, :-1], 2) +                       # penalize sudden changes in EV power
 
-                10 * optimizer.dt * cp.maximum(0, cp.multiply(c_elec, P_util))+   # keep energy cost awareness
+                10 * optimizer.dt * cp.maximum(0, cp.multiply(c_elec, P_util)) +    # keep energy cost awareness
 
-                10*optimizer.dt * cp.maximum(0, x_b[:, :optimizer.K] - 0.8) +   # soft constraints on Battery SOC
-                10*optimizer.dt * cp.maximum(0, 0.2 - x_b[:, :optimizer.K]) +
+                10 *optimizer.dt * cp.maximum(0, x_b[:, :optimizer.K] - 0.8) +      # soft constraints on Battery SOC
+                10 *optimizer.dt * cp.maximum(0, 0.2 - x_b[:, :optimizer.K]) +
                 
-                10 * optimizer.dt * cp.maximum(0, x_ev[:, :optimizer.K] - 0.8) +  # soft constraints on EV SOC
+                10 * optimizer.dt * cp.maximum(0, x_ev[:, :optimizer.K] - 0.8) +    # soft constraints on EV SOC
                 10 * optimizer.dt * cp.maximum(0, 0.2 - x_ev[:, :optimizer.K])
-                # 100 * optimizer.dt * cp.maximum(0, 0.6 - x_ev[0, K_leave - 1])
         )
     )
 
     # Solve
     problem = cp.Problem(objective, constraints)
-    problem.solve(verbose=False)
+    problem.solve(solver=cp.GUROBI, verbose=True)
 
-    return x_b.value, x_ev.value, P_bat.value, P_ev.value, P_util.value, P_sol, P_dem
+    return x_b.value,x_ev.value,P_bat.value, P_ev.value*ev_plugged[:optimizer.K], P_util.value, P_sol, P_dem
 
 def plot_results(x_b, x_ev, P_bat, P_ev, P_util, P_sol, P_dem, dt, day, weight, run_id=None):
     safe_day = day.replace("/", "-")
