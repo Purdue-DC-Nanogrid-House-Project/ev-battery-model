@@ -52,8 +52,8 @@ def args_handler():
     parser.add_argument('--temperature_ev', type=float, default=-1, help='Temperature (F) [e.g.68,20]')
         ## Use Paramaters
     parser.add_argument('--distance',type=check_pos, default= 10, help='Distance Driven (km) [e.g. 30, 50]')
-    parser.add_argument('--time_leave',type=check_pos, default=8, help='Time left from house [e.g. 7:00 AM]')
-    parser.add_argument('--time_arrive',type=check_pos, default=15, help='Time arrived at house [e.g. 5:00 PM]')
+    parser.add_argument('--time_leave',type=check_pos, default=8, help='Time left from house [e.g. 8:00 AM]')
+    parser.add_argument('--time_arrive',type=check_pos, default=15, help='Time arrived at house [e.g. 3:00 PM]')
 
 
     # Solar Panel

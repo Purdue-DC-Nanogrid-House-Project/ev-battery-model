@@ -46,10 +46,10 @@ if __name__ == "__main__":
     dt = 5/60  # 1 minute (for consistency with your data right now)
     day = "6/15/2024"  # test date that exists in your CSV
     
-    home_model = HomeModel(dt, day,1)
+    home_model = HomeModel(dt, day,0)
 
     print("Start time:", home_model.start_time)
     print("End time:", home_model.end_time)
     print("Demand length:", len(home_model.demand))
     print("First 5 values:")
-    print(home_model.demand.head())
+    print(home_model.demand)

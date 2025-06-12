@@ -13,6 +13,8 @@ class SolarPanelModel:
         self.latitude = latitude # Latitude Co-ordinate of Solar Panel Location (deg)
         self.longitude = longitude # Longitude Co-ordinate of Solar Panel Location (deg)
         self.day = day
+        self.dt = dt
+        self.i = i
 
         # Weather Parameters
         weather_path = 'data/HistoricalWeather.csv'
@@ -55,9 +57,6 @@ class SolarPanelModel:
         # Create solar panel model
         self.dc_power_total =  sum(self.model_segment(segment).dc for segment in self.segments)
         self.ac_power_total =  sum(self.model_segment(segment).ac for segment in self.segments)
-
-        self.dt = dt
-        self.i = i
     # Function to model each segment
     def model_segment(self,segment):
         system = pvsystem.PVSystem(
@@ -96,16 +95,38 @@ class SolarPanelModel:
             return pd.Series(0, index=self.weather.index)  # return zero power if error
         
     # Function to load and filter weather data
-    def load_weather_data(self,file_path, start_time, end_time):
-        weather_data = pd.read_csv(file_path, parse_dates=[0])
+    def load_weather_data(self, file_path, start_time, end_time):
+        # Load and label the columns
+        weather_data = pd.read_csv(file_path)
         weather_data.columns = [
             'timestamp', 'coordinates', 'model', 'elevation', 'utc_offset',
             'temperature', 'wind_speed', 'ghi', 'dhi', 'dni'
         ]
-        weather_data = weather_data.set_index('timestamp')
-        weather_data = weather_data[start_time:end_time]
+        weather_data["timestamp"] = pd.to_datetime(weather_data["timestamp"])  # Convert to datetime
+        weather_data.set_index('timestamp', inplace=True)
+        weather_data = weather_data[~weather_data.index.duplicated(keep='first')]
+
+        freq = f'{int(self.dt*60)}min'  # e.g. '15min' or '60min' depending on self.dt
+
+        # Separate numeric and non-numeric columns
+        numeric_cols = weather_data.select_dtypes(include='number').columns
+        non_numeric_cols = weather_data.select_dtypes(exclude='number').columns
+
+        # Resample and interpolate numeric columns only
+        numeric_data = weather_data[numeric_cols].resample(freq).interpolate(method='time')
+
+        # Forward fill non-numeric columns after resampling
+        non_numeric_data = weather_data[non_numeric_cols].resample(freq).ffill()
+
+        # Combine numeric and non-numeric columns back together
+        weather_data = pd.concat([non_numeric_data, numeric_data], axis=1)
+
+        # Now slice by start_time and end_time
+        weather_data = weather_data.loc[start_time:end_time]
+        weather_data = weather_data.iloc[:-1]
+
         return weather_data
-        
+            
     def date_format(self):
         day_str = datetime.strptime(self.day, '%m/%d/%Y')
         offset = self.i * self.dt * 60  # total minutes to shift
@@ -117,5 +138,33 @@ class SolarPanelModel:
         start_time = start_time_dt.strftime('%Y-%m-%d %H:%M:%S')
         end_time = end_time_dt.strftime('%Y-%m-%d %H:%M:%S')
         return start_time,end_time
+    
 if __name__ == "__main__":
-    dt = 1.0
+    dt = 5/60  # 5-minute timestep
+    day = "6/15/2024"
+    i = 0  # MPC iteration step
+
+    # Parameter values from argparse config
+    pdc0 = 325.6         # DC power at STC (W)
+    v_mp = 59.2          # Max power voltage (V)
+    i_mp = 5.50          # Max power current (A)
+    v_oc = 70.9          # Open circuit voltage (V)
+    i_sc = 5.94          # Short circuit current (A)
+    alpha_sc = 3.27e-3   # Temp coefficient of Isc (A/C)
+    beta_oc = -0.17      # Temp coefficient of Voc (V/C)
+    gamma_pdc = -0.00258 # Power temp coefficient (1/C)
+    latitude = 40.43093  # Latitude
+    longitude = -86.911617  # Longitude
+
+    # Initialize the SolarPanelModel
+    solar_model = SolarPanelModel(
+        dt, day, pdc0, v_mp, i_mp, v_oc, i_sc,
+        alpha_sc, beta_oc, gamma_pdc, latitude, longitude,i
+    )
+
+    # Output test information
+    print("Start time:", solar_model.start_time)
+    print("End time:", solar_model.end_time)
+    print("data length:", len(solar_model.weather))
+    print("Resulting Data")
+    print(solar_model.dc_power_total)

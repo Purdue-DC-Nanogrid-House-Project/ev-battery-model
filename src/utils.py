@@ -171,7 +171,7 @@ def evbm_optimization_v2(optimizer,weight):
     return x_b.value,x_ev.value,P_bat.value, P_ev.value*ev_plugged[:optimizer.K], P_util.value, P_sol, P_dem
 
 def evbm_optimization_v3(optimizer,weight,i):
-    # Define variables
+# Define variables
     x_b = cp.Variable((1, optimizer.K+1))  # Battery SOC
     x_ev = cp.Variable((1, optimizer.K+1))  # EV SOC
     P_bat_c = cp.Variable((optimizer.K, 1))  # Battery charging
@@ -183,10 +183,12 @@ def evbm_optimization_v3(optimizer,weight,i):
     P_util = cp.Variable((optimizer.K, 1))   # Grid power
     t_leave = optimizer.ev_model.time_leave
     t_arrive = optimizer.ev_model.time_arrive
-    K_leave = int((t_leave / optimizer.dt)-i)
-    K_arrive = int((t_arrive / optimizer.dt)-i)
-    # print("Index Leave",{K_leave})
-    # print("Index arrive",{K_arrive})
+    K_leave = int(t_leave / optimizer.dt)
+    K_arrive = int(t_arrive / optimizer.dt)
+    K_leave = K_leave -i
+    K_arrive = K_arrive - i
+    print("Index Leave",{K_leave})
+    print("Index arrive",{K_arrive})
 
     # Known data
     time_range = np.arange(0, 24, optimizer.dt)
@@ -197,7 +199,7 @@ def evbm_optimization_v3(optimizer,weight,i):
     c_elec = np.where((time_range >= 14) & (time_range <= 20), 0.2573, 0.0825).reshape(-1, 1)
     P_dem = optimizer.home_model.demand.to_numpy().reshape(-1, 1)
     ev_plugged = np.ones_like(P_sol)
-    ev_plugged[K_leave-i:K_arrive-i] = 0
+    ev_plugged[K_leave:K_arrive] = 0
 
 
     # Constraints
@@ -209,7 +211,7 @@ def evbm_optimization_v3(optimizer,weight,i):
 
         # EV SOC dynamics
         x_ev[0, 0] == optimizer.x0_ev,
-        x_ev[0,K_leave] == 0.8,# move to soft constraints
+        x_ev[0,K_leave] == 0.8,
         x_ev[0,K_arrive] == 0.2,
         # P_ev[K_leave:K_arrive] == 0, #caused a shit ton of problems 
         x_ev[:, 1:optimizer.K+1] == optimizer.ev_model.sys_d.A @ x_ev[:, :optimizer.K] +
