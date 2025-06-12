@@ -2,16 +2,8 @@ import logging
 import pandas as pd
 import args_handler
 
-from ev_model import EVModel  # Import the EVModel class
-from battery_model import BatteryModel  # Import the BatteryModel class
-from utility_model import UtilityModel #Import UtilityModel class
-from home_model import HomeModel # Import UtilityModel Class
-from solar_panel_model import SolarPanelModel # Import SolarPanelModel Class
-from optimizer  import Optimizer #Import Optimizer Class
-
 # Import the test function
-from test_models import evbm_optimization_v2,plot_results,plot_obj_functions,plot_inputs
-
+from utils import initialize_models,evbm_optimization_v2,plot_optimizer_results
 # Set up logging configuration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -60,125 +52,14 @@ def main():
         logging.info(f"  latitude: {model_args.latitude} deg")
         logging.info(f"  longitude: {model_args.longitude} deg")
         print(f" ")
-        
-    # Create instances of the models
-    dt = 1/60 # Example time step in hours
 
-    # Create BatteryModel instance
-    charger_model = BatteryModel(
-        dt=dt,
-        tau_b=model_args.tau_b,
-        eta_c_b=model_args.eta_c_b,
-        eta_d_b=model_args.eta_d_b,
-        x_bar_b=model_args.x_bar_b,
-        p_c_bar_b=model_args.p_c_bar_b,
-        p_d_bar_b=model_args.p_d_bar_b,
-        V_nom_b=model_args.V_nom_b,
-        P_rated_b=model_args.P_rated_b
-    )
-
-    # Create EVModel instance
-    ev_model = EVModel(
-        dt=dt,
-        tau_ev=model_args.tau_ev,
-        eta_c_ev=model_args.eta_c_ev,
-        eta_d_ev=model_args.eta_d_ev,
-        x_bar_ev=model_args.x_bar_ev,
-        p_c_bar_ev=model_args.p_c_bar_ev,
-        p_d_bar_ev=model_args.p_d_bar_ev,
-        V_nom_ev=model_args.V_nom_ev,
-        P_rated_ev=model_args.P_rated_ev,
-        alpha_ev=model_args.alpha_ev,
-        Temperature_ev=model_args.temperature_ev,
-        time_leave = model_args.time_leave,
-        time_arrive = model_args.time_arrive,
-        distance = model_args.distance
-    )
-
-    # Create Utility Model Instance
-    utility_model = UtilityModel(
-        dt = dt,
-        utility = 0
-    )
-
-    # Create Home Model Instance
-    home_model = HomeModel(
-        dt = dt,
-        day = model_args.day
-    )
-
-    # Create Solar Panel Model Instance
-    solar_model = SolarPanelModel(
-        dt = dt,
-        day = model_args.day,
-        pdc0 = model_args.pdc0, 
-        v_mp = model_args.v_mp, 
-        i_mp= model_args.i_mp,
-        v_oc = model_args.v_oc,
-        i_sc = model_args.i_sc ,
-        alpha_sc = model_args.alpha_sc, 
-        beta_oc = model_args.beta_oc,
-        gamma_pdc = model_args.gamma_pdc, 
-        latitude = model_args.latitude,
-        longitude = model_args.longitude
-    )
-
-    # Create Optimizer Instance
-    optimizer = Optimizer(
-        dt = dt,
-        battery_model = charger_model,
-        ev_model = ev_model,
-        home_model= home_model,
-        solar_model= solar_model,
-        x0_b = 0.5,
-        x0_ev = 0.5
-    )
-
-    # Print Solar results for example
-    # time_range = pd.to_datetime(solar_model.dc_power_total[0:-1].index)
-    # time_range = (time_range).strftime('%H:%M')
-    # power = (solar_model.dc_power_total[0:-1].values)/1000
-    # # Creating a DataFrame with 'Time (hours)' and 'Power'
-    # df_solar_results = pd.DataFrame({
-    #     'Time (hours)': time_range,
-    #     'Solar Power (kW)': power
-    # })
-
-    # # Run basic model test
-    # test_ev_charging(ev_model, charger_model, initial_charge=0.5, target_charge=0.9)
-
-    # # Run test with Utility and Home
-    # # ## Case 1
-    # home_model.demand = 15 #(kW), EV call for 4.0 (kW)
-    # test_ev_charging_v2(ev_model,charger_model,home_model,utility_model,initial_charge=0.7, target_charge=0.8, ev_call = 4)
-
-    # ## Case 2
-    # home_model.demand = 8 #(kW), EV call for 5.0 (kW) [Max]
-    # test_ev_charging_v2(ev_model,charger_model,home_model,utility_model,initial_charge=0.5, target_charge=0.9, ev_call = ev_model.p_c_bar_ev)
-
-    #Plot Solar Output on chosen day
-    #test_solar_model(solar_model,dt)
-
-    # Run test case with Utility, Home, and Solar
-    #home_model.demand = 15 #(kW), EV call for 5.0 (kW) [Max]
-    #test_ev_charging_v3(ev_model,charger_model,home_model,utility_model,solar_model,initial_charge_pre=0.8, initial_charge_post=0.6, target_charge= 1.0)
+    #Single optimizer check
+    dt = 5/60 # Example time step in hours - 5 mins
+    optimizer = initialize_models(model_args, dt,0)
     [x_b,x_ev,P_bat,P_ev,P_util, P_sol,P_dem] = evbm_optimization_v2(optimizer,8000)
-    plot_results(x_b,x_ev,P_bat,P_ev,P_util,P_sol,P_dem,dt,model_args.day,8000)
-    # plot_obj_functions(x_b,x_ev,P_bat,P_ev,P_util,P_sol,P_dem,dt)
-    # plot_inputs(P_sol,P_dem,dt,model_args.day)
-    
-    # start_weight = 1000
-    # end_weight = 10000
-    # increment = 500
+    plot_optimizer_results(x_b,x_ev,P_bat,P_ev,P_util,P_sol,P_dem,dt,model_args.day,8000)
 
-    # for weight in range(start_weight, end_weight + 1, increment):
-    #     logging.info(f"Running optimization for weight = {weight}")
-    #     [x_b, x_ev, P_bat, P_ev, P_util, P_sol, P_dem] = evbm_optimization_v2(optimizer, weight)
-        
-    #     # You can also save or label plots by weight
-    #     plot_results(x_b, x_ev, P_bat, P_ev, P_util, P_sol, P_dem, dt, model_args.day, weight)
-    #     # plot_obj_functions(x_b, x_ev, P_bat, P_ev, P_util, P_sol, P_dem, dt)
-    #     # plot_inputs(P_sol, P_dem, dt, model_args.day)
+    #MPC - iterative optimizer
 
 if __name__ == "__main__":
     main()

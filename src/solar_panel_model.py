@@ -8,7 +8,7 @@ import numpy as np
 from datetime import datetime,timedelta
 
 class SolarPanelModel:
-    def __init__(self,dt,day,pdc0,v_mp,i_mp,v_oc,i_sc,alpha_sc,beta_oc,gamma_pdc,latitude,longitude):
+    def __init__(self,dt,day,pdc0,v_mp,i_mp,v_oc,i_sc,alpha_sc,beta_oc,gamma_pdc,latitude,longitude,i):
         # Location Paramaters
         self.latitude = latitude # Latitude Co-ordinate of Solar Panel Location (deg)
         self.longitude = longitude # Longitude Co-ordinate of Solar Panel Location (deg)
@@ -56,6 +56,8 @@ class SolarPanelModel:
         self.dc_power_total =  sum(self.model_segment(segment).dc for segment in self.segments)
         self.ac_power_total =  sum(self.model_segment(segment).ac for segment in self.segments)
 
+        self.dt = dt
+        self.i = i
     # Function to model each segment
     def model_segment(self,segment):
         system = pvsystem.PVSystem(
@@ -106,9 +108,14 @@ class SolarPanelModel:
         
     def date_format(self):
         day_str = datetime.strptime(self.day, '%m/%d/%Y')
-        start_time = day_str.strftime('%Y-%m-%d 00:00:00')
-        end_time = (day_str + timedelta(days=1)).strftime('%Y-%m-%d 00:00:00')
-        # print(start_time,end_time)
-        return start_time, end_time
+        offset = self.i * self.dt * 60  # total minutes to shift
+
+        start_time_dt = datetime.combine(day_str.date(), datetime.min.time()) + timedelta(minutes=offset)
+        end_time_dt = datetime.combine((day_str + timedelta(days=1)).date(), datetime.min.time()) + timedelta(minutes=offset)
+
+        # Format with time reflecting the offset (not fixed to 00:00:00)
+        start_time = start_time_dt.strftime('%Y-%m-%d %H:%M:%S')
+        end_time = end_time_dt.strftime('%Y-%m-%d %H:%M:%S')
+        return start_time,end_time
 if __name__ == "__main__":
     dt = 1.0
