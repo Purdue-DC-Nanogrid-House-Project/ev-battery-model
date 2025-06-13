@@ -181,26 +181,73 @@ def evbm_optimization_v3(optimizer,weight,i):
     P_bat = cp.Variable((optimizer.K, 1))  
     P_ev = cp.Variable((optimizer.K, 1))  
     P_util = cp.Variable((optimizer.K, 1))   # Grid power
-    t_leave = optimizer.ev_model.time_leave
-    t_arrive = optimizer.ev_model.time_arrive
-    K_leave = int(t_leave / optimizer.dt)
-    K_arrive = int(t_arrive / optimizer.dt)
-    K_leave = K_leave -i
-    K_arrive = K_arrive - i
-    print("Index Leave",{K_leave})
-    print("Index arrive",{K_arrive})
 
     # Known data
     time_range = np.arange(0, 24, optimizer.dt)
 
-    solar_power = (optimizer.solar_model.dc_power_total[0:-1].values)/1000
-    P_sol = np.interp(time_range, np.linspace(0, 23, len(solar_power)), solar_power).reshape(-1, 1)
+    solar_power = (optimizer.solar_model.dc_power_total.values)/1000
+    P_sol = solar_power.reshape(-1, 1)
 
     c_elec = np.where((time_range >= 14) & (time_range <= 20), 0.2573, 0.0825).reshape(-1, 1)
     P_dem = optimizer.home_model.demand.to_numpy().reshape(-1, 1)
-    ev_plugged = np.ones_like(P_sol)
-    ev_plugged[K_leave:K_arrive] = 0
 
+    #Determining when car leaves ad arrives
+    t_leave = optimizer.ev_model.time_leave
+    t_arrive = optimizer.ev_model.time_arrive
+    K_leave_real = int(t_leave / optimizer.dt)
+    K_arrive_real = int(t_arrive / optimizer.dt)
+    ev_plugged_real = np.ones(2 * len(P_sol), dtype=P_sol.dtype)
+    ev_plugged_real[K_leave_real:K_arrive_real] = 0
+    ev_plugged_real[K_leave_real+int((24/optimizer.dt)):K_arrive_real+int((24/optimizer.dt))] = 0
+
+    # Detect transitions in ev_plugged_real
+    transitions_real = np.diff(ev_plugged_real)
+    change_indices_real = np.where(transitions_real != 0)[0] + 1
+    # Create ev_plugged slice (already in your code)
+    ev_plugged = ev_plugged_real[i:int(i + (24 / optimizer.dt))].reshape(-1, 1)
+    # Plotting
+    plt.figure(figsize=(14, 5))
+    # Plot ev_plugged_real full series
+    plt.plot(ev_plugged_real, drawstyle='steps-post', label='ev_plugged_real', alpha=0.4)
+    # Highlight transitions in ev_plugged_real
+    for idx in change_indices_real:
+        plt.axvline(x=idx, color='red', linestyle='--', alpha=0.4)
+        plt.text(idx, 1.05, str(idx), rotation=90, verticalalignment='bottom', horizontalalignment='center', fontsize=7)
+    # Plot ev_plugged window (offset to match its position in ev_plugged_real)
+    offset = int(i)
+    ev_plugged_flat = ev_plugged.flatten()
+    x_vals = np.arange(offset, offset + len(ev_plugged_flat))
+    plt.plot(x_vals, ev_plugged_flat, drawstyle='steps-post', color='blue', linewidth=2, label='ev_plugged window')
+    plt.ylim(-0.1, 1.1)
+    plt.xlabel('Index')
+    plt.ylabel('Plugged Status')
+    plt.title('EV Plugged Status: Full vs. Windowed')
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+    ev_plugged_flat = ev_plugged.flatten()
+    transitions = np.diff(ev_plugged_flat)
+    leave_idxs = np.where(transitions == -1)[0] + 1
+    arrive_idxs = np.where(transitions == 1)[0] + 1
+    SOC_leave = 0.8
+    SOC_arrive = 0.2
+
+    X0_EV = optimizer.x0_ev   
+    X0_B = optimizer.x0_b 
+    # Handle leave
+    if leave_idxs.size > 0:
+        K_leave = int(leave_idxs[0])
+    else:
+        K_leave = 0
+        X0_EV = SOC_leave
+    # Handle arrive
+    if arrive_idxs.size > 0:
+        K_arrive = int(arrive_idxs[0])
+    else:
+        K_arrive = 0
+        X0_EV = SOC_arrive
 
     # Constraints
     constraints = [
@@ -210,26 +257,26 @@ def evbm_optimization_v3(optimizer,weight,i):
         P_util == P_dem + P_bat + cp.multiply(P_ev, ev_plugged[:optimizer.K]) - P_sol[:optimizer.K],
 
         # EV SOC dynamics
-        x_ev[0, 0] == optimizer.x0_ev,
-        x_ev[0,K_leave] == 0.8,
-        x_ev[0,K_arrive] == 0.2,
-        # P_ev[K_leave:K_arrive] == 0, #caused a shit ton of problems 
         x_ev[:, 1:optimizer.K+1] == optimizer.ev_model.sys_d.A @ x_ev[:, :optimizer.K] +
                             optimizer.ev_model.sys_d.B @ P_ev.T,
 
         P_ev <= optimizer.ev_model.p_c_bar_ev,
         P_ev >= -optimizer.ev_model.p_d_bar_ev,
 
+        x_ev[0, 0] == X0_EV,
+        x_ev[0,K_leave] == SOC_leave,
+        x_ev[0,K_arrive] == SOC_arrive,
         x_ev[0, optimizer.K] == x_ev[0, 0],
         x_ev >= 0.1,
         x_ev <= 0.9,
 
         # Battery SOC dynamics
-        x_b[0, 0] == optimizer.x0_b,
         x_b[:, 1:optimizer.K+1] == optimizer.battery_model.sys_d.A @ x_b[:, :optimizer.K] +
                            optimizer.battery_model.sys_d.B @ P_bat.T,
         P_bat <= optimizer.battery_model.p_c_bar_b,
         P_bat >= -optimizer.battery_model.p_d_bar_b,
+
+        x_b[0, 0] == X0_B,
         x_b[0, optimizer.K] == x_b[0, 0],
         x_b >= 0.1,
         x_b <= 0.9
@@ -257,7 +304,7 @@ def evbm_optimization_v3(optimizer,weight,i):
 
     # Solve
     problem = cp.Problem(objective, constraints)
-    problem.solve(solver=cp.GUROBI, verbose=True)
+    problem.solve(solver=cp.GUROBI, verbose=False)
 
     return x_b.value,x_ev.value,P_bat.value, P_ev.value*ev_plugged[:optimizer.K], P_util.value, P_sol, P_dem
 
@@ -268,7 +315,7 @@ def mpc_v1(model_args,dt,Horizon):
     
     return None
 
-def plot_optimizer_results(x_b, x_ev, P_bat, P_ev, P_util, P_sol, P_dem, dt, day, weight, run_id=None):
+def plot_optimizer_results(x_b, x_ev, P_bat, P_ev, P_util, P_sol, P_dem, dt, day, weight,i,run_id=None):
     safe_day = day.replace("/", "-")
     if run_id is None:
         run_id = safe_day
@@ -300,7 +347,8 @@ def plot_optimizer_results(x_b, x_ev, P_bat, P_ev, P_util, P_sol, P_dem, dt, day
     P_sol = np.squeeze(P_sol)
     P_dem = np.squeeze(P_dem)
     
-    time = np.arange(0, len(P_util) * dt, dt)
+    time = np.arange(0, len(P_util) * dt, dt) 
+    time = time + dt*i
     P_tot = -P_util + P_dem + P_bat - P_sol + P_ev  # Power conservation check
 
     # Energy metrics
@@ -308,7 +356,7 @@ def plot_optimizer_results(x_b, x_ev, P_bat, P_ev, P_util, P_sol, P_dem, dt, day
     E_home_demand = np.sum(P_dem) * dt
     E_solar_generated = np.sum(P_sol) * dt
     E_fed_to_grid = -np.sum(P_util[P_util < 0]) * dt
-    save_metrics(weight,E_grid_to_home,E_fed_to_grid)
+    # save_metrics(weight,E_grid_to_home,E_fed_to_grid)
 
     # Save energy summary to text file
     energy_summary = (

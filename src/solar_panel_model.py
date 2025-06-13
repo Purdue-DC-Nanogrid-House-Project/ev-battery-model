@@ -142,7 +142,7 @@ class SolarPanelModel:
 if __name__ == "__main__":
     dt = 5/60  # 5-minute timestep
     day = "6/15/2024"
-    i = 0  # MPC iteration step
+    i = 1 # MPC iteration step
 
     # Parameter values from argparse config
     pdc0 = 325.6         # DC power at STC (W)

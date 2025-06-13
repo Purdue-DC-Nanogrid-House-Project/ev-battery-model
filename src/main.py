@@ -3,7 +3,7 @@ import pandas as pd
 import args_handler
 
 # Import the test function
-from utils import initialize_models,evbm_optimization_v3,plot_optimizer_results
+from utils import initialize_models,evbm_optimization_v3,evbm_optimization_v2,plot_optimizer_results
 # Set up logging configuration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -54,11 +54,12 @@ def main():
         print(f" ")
 
     #Single optimizer check
-    i = 24
+    i = 180
     dt = 5/60 # Example time step in hours - 5 mins
     optimizer = initialize_models(model_args, dt,i)
+    # [x_b,x_ev,P_bat,P_ev,P_util, P_sol,P_dem] = evbm_optimization_v2(optimizer,8000)
     [x_b,x_ev,P_bat,P_ev,P_util, P_sol,P_dem] = evbm_optimization_v3(optimizer,8000,i)
-    plot_optimizer_results(x_b,x_ev,P_bat,P_ev,P_util,P_sol,P_dem,dt,model_args.day,8000)
+    plot_optimizer_results(x_b,x_ev,P_bat,P_ev,P_util,P_sol,P_dem,dt,model_args.day,8000,i)
 
     #MPC - iterative optimizer
 
