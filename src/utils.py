@@ -170,7 +170,7 @@ def evbm_optimization_v2(optimizer,weight):
 
     return x_b.value,x_ev.value,P_bat.value, P_ev.value*ev_plugged[:optimizer.K], P_util.value, P_sol, P_dem
 
-def evbm_optimization_v3(optimizer,weight,i):
+def evbm_optimization_v3(optimizer,weight,IC_EV,IC_B,i):
 # Define variables
     x_b = cp.Variable((1, optimizer.K+1))  # Battery SOC
     x_ev = cp.Variable((1, optimizer.K+1))  # EV SOC
@@ -199,34 +199,33 @@ def evbm_optimization_v3(optimizer,weight,i):
     ev_plugged_real = np.ones(2 * len(P_sol), dtype=P_sol.dtype)
     ev_plugged_real[K_leave_real:K_arrive_real] = 0
     ev_plugged_real[K_leave_real+int((24/optimizer.dt)):K_arrive_real+int((24/optimizer.dt))] = 0
-
-    # Detect transitions in ev_plugged_real
-    transitions_real = np.diff(ev_plugged_real)
-    change_indices_real = np.where(transitions_real != 0)[0] + 1
-    # Create ev_plugged slice (already in your code)
     ev_plugged = ev_plugged_real[i:int(i + (24 / optimizer.dt))].reshape(-1, 1)
-    # Plotting
-    plt.figure(figsize=(14, 5))
-    # Plot ev_plugged_real full series
-    plt.plot(ev_plugged_real, drawstyle='steps-post', label='ev_plugged_real', alpha=0.4)
-    # Highlight transitions in ev_plugged_real
-    for idx in change_indices_real:
-        plt.axvline(x=idx, color='red', linestyle='--', alpha=0.4)
-        plt.text(idx, 1.05, str(idx), rotation=90, verticalalignment='bottom', horizontalalignment='center', fontsize=7)
-    # Plot ev_plugged window (offset to match its position in ev_plugged_real)
-    offset = int(i)
-    ev_plugged_flat = ev_plugged.flatten()
-    x_vals = np.arange(offset, offset + len(ev_plugged_flat))
-    plt.plot(x_vals, ev_plugged_flat, drawstyle='steps-post', color='blue', linewidth=2, label='ev_plugged window')
-    plt.ylim(-0.1, 1.1)
-    plt.xlabel('Index')
-    plt.ylabel('Plugged Status')
-    plt.title('EV Plugged Status: Full vs. Windowed')
-    plt.grid(True)
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
 
+    # Detect transitions in ev_plugged_real - plot and debug
+    # transitions_real = np.diff(ev_plugged_real)
+    # change_indices_real = np.where(transitions_real != 0)[0] + 1
+    # # Plotting
+    # plt.figure(figsize=(14, 5))
+    # # Plot ev_plugged_real full series
+    # plt.plot(ev_plugged_real, drawstyle='steps-post', label='ev_plugged_real', alpha=0.4)
+    # # Highlight transitions in ev_plugged_real
+    # for idx in change_indices_real:
+    #     plt.axvline(x=idx, color='red', linestyle='--', alpha=0.4)
+    #     plt.text(idx, 1.05, str(idx), rotation=90, verticalalignment='bottom', horizontalalignment='center', fontsize=7)
+    # # Plot ev_plugged window (offset to match its position in ev_plugged_real)
+    # offset = int(i)
+    # ev_plugged_flat = ev_plugged.flatten()
+    # x_vals = np.arange(offset, offset + len(ev_plugged_flat))
+    # plt.plot(x_vals, ev_plugged_flat, drawstyle='steps-post', color='blue', linewidth=2, label='ev_plugged window')
+    # plt.ylim(-0.1, 1.1)
+    # plt.xlabel('Index')
+    # plt.ylabel('Plugged Status')
+    # plt.title('EV Plugged Status: Full vs. Windowed')
+    # plt.grid(True)
+    # plt.legend()
+    # plt.tight_layout()
+    # plt.show()
+    
     ev_plugged_flat = ev_plugged.flatten()
     transitions = np.diff(ev_plugged_flat)
     leave_idxs = np.where(transitions == -1)[0] + 1
@@ -234,8 +233,8 @@ def evbm_optimization_v3(optimizer,weight,i):
     SOC_leave = 0.8
     SOC_arrive = 0.2
 
-    X0_EV = optimizer.x0_ev   
-    X0_B = optimizer.x0_b 
+    X0_EV = IC_EV  
+    X0_B = IC_B
     # Handle leave
     if leave_idxs.size > 0:
         K_leave = int(leave_idxs[0])
@@ -304,18 +303,48 @@ def evbm_optimization_v3(optimizer,weight,i):
 
     # Solve
     problem = cp.Problem(objective, constraints)
-    problem.solve(solver=cp.GUROBI, verbose=False)
+    problem.solve(solver=cp.GUROBI, verbose=True)
 
     return x_b.value,x_ev.value,P_bat.value, P_ev.value*ev_plugged[:optimizer.K], P_util.value, P_sol, P_dem
 
-def mpc_v1(model_args,dt,Horizon):
-    N_steps = int(Horizon/dt)
-    for i in range(N_steps):
-        optimizer = initialize_models(model_args,dt,i)
+def mpc_v1(model_args, dt, Horizon):
+    N_steps = int(Horizon / dt)
     
-    return None
+    # State arrays
+    x_B = np.zeros(N_steps + 1)
+    x_EV = np.zeros(N_steps + 1)
 
-def plot_optimizer_results(x_b, x_ev, P_bat, P_ev, P_util, P_sol, P_dem, dt, day, weight,i,run_id=None):
+    # Control arrays
+    p_B = np.zeros(N_steps)
+    p_EV = np.zeros(N_steps)
+    p_U = np.zeros(N_steps)
+    p_S = np.zeros(N_steps)
+    p_D = np.zeros(N_steps)
+
+    for i in range(N_steps):
+        optimizer = initialize_models(model_args, dt, i)
+        if i == 0:
+            x_B[i] = optimizer.x0_b
+            x_EV[i] = optimizer.x0_ev
+
+        [x_b, x_ev, p_b, p_ev, p_u, p_s, p_d] = evbm_optimization_v3(optimizer, 8000,x_EV[i],x_B[i],i)
+
+        # Apply the first control input and propagate state
+        x_B[i+1] = x_b[0, 1]
+        x_EV[i+1] = x_ev[0, 1]
+
+        p_B[i] = p_b[0, 0]
+        p_EV[i] = p_ev[0, 0]
+        p_U[i] = p_u[0, 0]
+        p_S[i] = p_s[0]
+        p_D[i] = p_d[0]
+
+        print(f"{i}th Iteration complete")
+
+    print("MPC was sucessful")
+    return x_B, x_EV, p_B, p_EV, p_U, p_S, p_D
+
+def plot_optimizer_results(x_b, x_ev, P_bat, P_ev, P_util, P_sol, P_dem, dt, day,i,run_id=None):
     safe_day = day.replace("/", "-")
     if run_id is None:
         run_id = safe_day
