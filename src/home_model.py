@@ -9,7 +9,7 @@ class HomeModel:
           # self.start_time = "6/15/2024 0:00"
           # self.end_time = "6/16/2024 0:00"
           self.start_time, self.end_time = self.date_format()
-          self.demand_path = "data/total_home_power_2.csv" 
+          self.demand_path = "data/total_home_power_3.csv" 
           self.demand = self.load_demand_data(self.demand_path,self.start_time,self.end_time)
 
      def load_demand_data(self,file_path, start_time, end_time):

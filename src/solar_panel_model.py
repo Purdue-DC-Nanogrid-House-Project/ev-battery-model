@@ -17,7 +17,7 @@ class SolarPanelModel:
         self.i = i
 
         # Weather Parameters
-        weather_path = 'data/HistoricalWeather.csv'
+        weather_path = 'data/HistoricalWeather_2.csv'
         self.start_time,self.end_time = self.date_format()
         # self.start_time = '2024-06-15 00:00:00'
         # self.end_time = '2024-06-16 00:00:00'

@@ -53,20 +53,20 @@ def main():
         logging.info(f"  longitude: {model_args.longitude} deg")
         print(f" ")
 
-    # #Single optimizer check
-    # i = 0
-    # dt = 5/60 # Example time step in hours - 5 mins
-    # optimizer = initialize_models(model_args, dt,i)
-    # IC_EV = optimizer.x0_ev
-    # IC_B = optimizer.x0_b
-    # [x_b,x_ev,P_bat,P_ev,P_util, P_sol,P_dem] = evbm_optimization_v3(optimizer,8000,IC_EV,IC_B,i)
-    # plot_optimizer_results(x_b,x_ev,P_bat,P_ev,P_util,P_sol,P_dem,dt,model_args.day,i)
+    #Single optimizer check
+    i = 0
+    dt = 5/60 # Example time step in hours - 5 mins
+    optimizer = initialize_models(model_args, dt,i)
+    IC_EV = optimizer.x0_ev
+    IC_B = optimizer.x0_b
+    [x_b,x_ev,P_bat,P_ev,P_util, P_sol,P_dem] = evbm_optimization_v3(optimizer,8000,IC_EV,IC_B,i)
+    plot_optimizer_results(x_b,x_ev,P_bat,P_ev,P_util,P_sol,P_dem,dt,model_args.day,i)
 
     #MPC - iterative optimizer
-    Horizon = 24
-    dt = 5/60
-    [x_B, x_EV, p_B, p_EV, p_U, p_S, p_D] = mpc_v1(model_args, dt, Horizon)
-    plot_optimizer_results(x_B,x_EV,p_B,p_EV, p_U, p_S, p_D,dt,model_args.day,0)
+    # Horizon = 24
+    # dt = 5/60
+    # [x_B, x_EV, p_B, p_EV, p_U, p_S, p_D] = mpc_v1(model_args, dt, Horizon)
+    # plot_optimizer_results(x_B,x_EV,p_B,p_EV, p_U, p_S, p_D,dt,model_args.day,0)
 
 if __name__ == "__main__":
     main()
