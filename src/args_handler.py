@@ -22,15 +22,15 @@ def args_handler():
     """Parse command line arguments for battery model parameters."""
     parser = argparse.ArgumentParser(description='Charger Battery Model (b) and Electric Vehicle(ev) Parameters')
 
-    # Charger Battery
+    # Charger Battery - Savant/POMCube
         ## Efficiency Parameters
     parser.add_argument('--tau_b', type=check_pos, default=1600, help='Dissipation Time Constant (h) [typically between 800-2400 h]')
-    parser.add_argument('--eta_c_b', type=check_eta, default=0.95, help='Charging Efficiency (fraction, e.g., 0.95 for 95%%)')
-    parser.add_argument('--eta_d_b', type=check_eta, default=0.95, help='Discharging Efficiency (fraction, e.g., 0.95 for 95%%)')
+    parser.add_argument('--eta_c_b', type=check_eta, default=0.98, help='Charging Efficiency (fraction, e.g., 0.95 for 95%%)')
+    parser.add_argument('--eta_d_b', type=check_eta, default=0.97, help='Discharging Efficiency (fraction, e.g., 0.95 for 95%%)')
         ## Capacity Parameters 
-    parser.add_argument('--x_bar_b', type=check_pos, default=13.5, help='Chemical Energy Capacity (kWh) [e.g., 15, 13.5]')
-    parser.add_argument('--p_c_bar_b', type=check_pos, default=5, help='Electrical Charging Capacity (kW) [e.g., 5, 6]')
-    parser.add_argument('--p_d_bar_b', type=check_pos, default=5, help='Electrical Discharging Capacity (kW) [e.g., 5, 6]')
+    parser.add_argument('--x_bar_b', type=check_pos, default=18.5, help='Chemical Energy Capacity (kWh) [e.g., 15, 13.5]')
+    parser.add_argument('--p_c_bar_b', type=check_pos, default=12.5, help='Electrical Charging Capacity (kW) [e.g., 5, 6]')
+    parser.add_argument('--p_d_bar_b', type=check_pos, default=12.5, help='Electrical Discharging Capacity (kW) [e.g., 5, 6]')
         ##Power rating and resistance parameters
     parser.add_argument('--V_nom_b', type=check_pos, default=384, help='Nominal Voltage (V) [e.g., 380, 384]')
     parser.add_argument('--P_rated_b', type=check_pos, default=12.5, help='Power Rating (kWh) [e.g., 12.5,13.5]')

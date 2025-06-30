@@ -257,7 +257,7 @@ def evbm_optimization_v3(optimizer,weight,IC_EV,IC_B,i):
 
         # EV SOC dynamics
         x_ev[:, 1:optimizer.K+1] == optimizer.ev_model.sys_d.A @ x_ev[:, :optimizer.K] +
-                            optimizer.ev_model.sys_d.B @ P_ev.T,
+                            (optimizer.ev_model.sys_d.B @ P_ev.T)/optimizer.ev_model.x_bar_ev,
 
         P_ev <= optimizer.ev_model.p_c_bar_ev,
         P_ev >= -optimizer.ev_model.p_d_bar_ev,
@@ -271,7 +271,7 @@ def evbm_optimization_v3(optimizer,weight,IC_EV,IC_B,i):
 
         # Battery SOC dynamics
         x_b[:, 1:optimizer.K+1] == optimizer.battery_model.sys_d.A @ x_b[:, :optimizer.K] +
-                           optimizer.battery_model.sys_d.B @ P_bat.T,
+                           (optimizer.battery_model.sys_d.B @ P_bat.T)/optimizer.battery_model.x_bar_b,
         P_bat <= optimizer.battery_model.p_c_bar_b,
         P_bat >= -optimizer.battery_model.p_d_bar_b,
 

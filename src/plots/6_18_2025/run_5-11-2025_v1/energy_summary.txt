@@ -1,5 +1,5 @@
 === Energy Flow Summary for 5/11/2025 ===
-1. Grid supplied to Home/Battery: 24.62 kWh
+1. Grid supplied to Home/Battery: 35.96 kWh
 2. Total Home Demand:             82.14 kWh
 3. Solar Energy Produced:         75.37 kWh
-4. Energy Fed Back to Grid:       9.57 kWh
+4. Energy Fed Back to Grid:       28.58 kWh

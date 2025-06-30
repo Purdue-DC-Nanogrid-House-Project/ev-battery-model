@@ -57,6 +57,9 @@ def main():
     i = 0
     dt = 5/60 # Example time step in hours - 5 mins
     optimizer = initialize_models(model_args, dt,i)
+    print("Parsed x_bar_b:", model_args.x_bar_b)
+    print("Parsed p_c_bar_b:", model_args.p_c_bar_b)
+    print("Parsed p_d_bar_b:", model_args.p_d_bar_b)
     IC_EV = optimizer.x0_ev
     IC_B = optimizer.x0_b
     [x_b,x_ev,P_bat,P_ev,P_util, P_sol,P_dem] = evbm_optimization_v3(optimizer,8000,IC_EV,IC_B,i)
