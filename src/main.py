@@ -71,5 +71,11 @@ def main():
     # [x_B, x_EV, p_B, p_EV, p_U, p_S, p_D] = mpc_v1(model_args, dt, Horizon)
     # plot_optimizer_results(x_B,x_EV,p_B,p_EV, p_U, p_S, p_D,dt,model_args.day,0)
 
+    # Testing Water Heater and HVAC
+    i = 0
+    dt = 5/60 # Example time step in hours - 5 mins
+
+    
+
 if __name__ == "__main__":
     main()

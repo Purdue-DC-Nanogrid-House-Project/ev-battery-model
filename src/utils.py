@@ -4,6 +4,7 @@ from utility_model import UtilityModel #Import UtilityModel class
 from home_model import HomeModel # Import UtilityModel Class
 from solar_panel_model import SolarPanelModel # Import SolarPanelModel Class
 from optimizer  import Optimizer #Import Optimizer Class
+from hvac import HVAC # Import HVAC Class
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -67,6 +68,84 @@ def initialize_models(model_args, dt,i):
         latitude=model_args.latitude,
         longitude=model_args.longitude,
         i = i
+    )
+
+    optimizer = Optimizer(
+        dt=dt,
+        battery_model=charger_model,
+        ev_model=ev_model,
+        home_model=home_model,
+        solar_model=solar_model,
+        x0_b=0.5,
+        x0_ev=0.5
+    )
+
+    return optimizer
+
+def initialize_models_v2(model_args,dt,i):
+    charger_model = BatteryModel(
+        dt=dt,
+        tau_b=model_args.tau_b,
+        eta_c_b=model_args.eta_c_b,
+        eta_d_b=model_args.eta_d_b,
+        x_bar_b=model_args.x_bar_b,
+        p_c_bar_b=model_args.p_c_bar_b,
+        p_d_bar_b=model_args.p_d_bar_b,
+        V_nom_b=model_args.V_nom_b,
+        P_rated_b=model_args.P_rated_b
+    )
+
+    ev_model = EVModel(
+        dt=dt,
+        tau_ev=model_args.tau_ev,
+        eta_c_ev=model_args.eta_c_ev,
+        eta_d_ev=model_args.eta_d_ev,
+        x_bar_ev=model_args.x_bar_ev,
+        p_c_bar_ev=model_args.p_c_bar_ev,
+        p_d_bar_ev=model_args.p_d_bar_ev,
+        V_nom_ev=model_args.V_nom_ev,
+        P_rated_ev=model_args.P_rated_ev,
+        alpha_ev=model_args.alpha_ev,
+        Temperature_ev=model_args.temperature_ev,
+        time_leave=model_args.time_leave,
+        time_arrive=model_args.time_arrive,
+        distance=model_args.distance
+    )
+
+    utility_model = UtilityModel(
+        dt=dt,
+        utility=0
+    )
+
+    home_model = HomeModel(
+        dt=dt,
+        day=model_args.day,
+        i=i
+    )
+
+    solar_model = SolarPanelModel(
+        dt=dt,
+        day=model_args.day,
+        pdc0=model_args.pdc0,
+        v_mp=model_args.v_mp,
+        i_mp=model_args.i_mp,
+        v_oc=model_args.v_oc,
+        i_sc=model_args.i_sc,
+        alpha_sc=model_args.alpha_sc,
+        beta_oc=model_args.beta_oc,
+        gamma_pdc=model_args.gamma_pdc,
+        latitude=model_args.latitude,
+        longitude=model_args.longitude,
+        i = i
+    )
+
+    T_set = 22.0 #need to be a control input that changes with every i
+    theta = np.array([-5.0]) # a control input that changes with every i
+    hvac = HVAC (
+        dt = dt,
+        T_0 = model_args.T_0,
+        T_set = T_set,
+        theta= theta
     )
 
     optimizer = Optimizer(

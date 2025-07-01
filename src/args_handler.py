@@ -68,11 +68,16 @@ def args_handler():
     parser.add_argument('--latitude', type=float, default= 40.43093, help='Latitude co-ordinate of solar panel')
     parser.add_argument('--longitude', type=float, default= -86.911617, help='Longitude co-ordinate of solar panel')
 
+
+    # HVAC Parameters
+    parser.add_argument('--T_0', type=float, default= 20.0, help='Set Temperature in Deg Celcius (C)')
+
     # Display Parameters
     parser.add_argument('--check_params',type=bool, default=False, help='Check Parameters [True/False]')
 
     # Day Parameters
     parser.add_argument('--day',type=str,default='6/10/2025',help = 'Day of test [e.g. 6/10/2025]')
+
 
     args = parser.parse_args()
     return args
