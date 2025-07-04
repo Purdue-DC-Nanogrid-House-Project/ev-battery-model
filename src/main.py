@@ -3,7 +3,7 @@ import pandas as pd
 import args_handler
 
 # Import the test function
-from utils import initialize_models,evbm_optimization_v3,evbm_optimization_v2,plot_optimizer_results,mpc_v1
+from utils import initialize_models,evbm_optimization_v3,evbm_optimization_v4,plot_optimizer_results_v2,mpc_v1
 # Set up logging configuration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -54,16 +54,16 @@ def main():
         print(f" ")
 
     #Single optimizer check
-    i = 0
-    dt = 5/60 # Example time step in hours - 5 mins
-    optimizer = initialize_models(model_args, dt,i)
-    print("Parsed x_bar_b:", model_args.x_bar_b)
-    print("Parsed p_c_bar_b:", model_args.p_c_bar_b)
-    print("Parsed p_d_bar_b:", model_args.p_d_bar_b)
-    IC_EV = optimizer.x0_ev
-    IC_B = optimizer.x0_b
-    [x_b,x_ev,P_bat,P_ev,P_util, P_sol,P_dem] = evbm_optimization_v3(optimizer,8000,IC_EV,IC_B,i)
-    plot_optimizer_results(x_b,x_ev,P_bat,P_ev,P_util,P_sol,P_dem,dt,model_args.day,i)
+    # i = 0
+    # dt = 5/60 # Example time step in hours - 5 mins
+    # optimizer = initialize_models(model_args, dt,i)
+    # print("Parsed x_bar_b:", model_args.x_bar_b)
+    # print("Parsed p_c_bar_b:", model_args.p_c_bar_b)
+    # print("Parsed p_d_bar_b:", model_args.p_d_bar_b)
+    # IC_EV = optimizer.x0_ev
+    # IC_B = optimizer.x0_b
+    # [x_b,x_ev,P_bat,P_ev,P_util, P_sol,P_dem] = evbm_optimization_v3(optimizer,8000,IC_EV,IC_B,i)
+    # plot_optimizer_results(x_b,x_ev,P_bat,P_ev,P_util,P_sol,P_dem,dt,model_args.day,i)
 
     #MPC - iterative optimizer
     # Horizon = 24
@@ -74,7 +74,15 @@ def main():
     # Testing Water Heater and HVAC
     i = 0
     dt = 5/60 # Example time step in hours - 5 mins
-
+    optimizer = initialize_models(model_args, dt,i)
+    IC_EV = optimizer.x0_ev
+    IC_B = optimizer.x0_b
+    IC_T = optimizer.hvac_model.T_0
+    [x_b,x_ev,T_room,P_bat,P_ev,P_util,P_sol,P_dem,Q_hp] = evbm_optimization_v4(optimizer,8000,IC_EV,IC_B,IC_T,i)
+    
+    T_set = optimizer.hvac_model.get_T_set(0)
+    theta = optimizer.hvac_model.get_theta(0)
+    plot_optimizer_results_v2(x_b, x_ev, P_bat, P_ev, P_util, P_sol, P_dem,T_room,T_set,theta,Q_hp,dt,model_args.day,i,run_id=None)
     
 
 if __name__ == "__main__":

@@ -1,0 +1,5 @@
+=== Energy Flow Summary for 6/10/2025 ===
+1. Grid supplied to Home/Battery: 44.58 kWh
+2. Total Home Demand:             91.36 kWh
+3. Solar Energy Produced:         55.10 kWh
+4. Energy Fed Back to Grid:       -0.00 kWh

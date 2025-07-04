@@ -13,7 +13,7 @@ import numpy as np
 import os
 import re
 
-def initialize_models(model_args, dt,i):
+def initialize_models(model_args,dt,i):
     charger_model = BatteryModel(
         dt=dt,
         tau_b=model_args.tau_b,
@@ -70,82 +70,10 @@ def initialize_models(model_args, dt,i):
         i = i
     )
 
-    optimizer = Optimizer(
-        dt=dt,
-        battery_model=charger_model,
-        ev_model=ev_model,
-        home_model=home_model,
-        solar_model=solar_model,
-        x0_b=0.5,
-        x0_ev=0.5
-    )
-
-    return optimizer
-
-def initialize_models_v2(model_args,dt,i):
-    charger_model = BatteryModel(
-        dt=dt,
-        tau_b=model_args.tau_b,
-        eta_c_b=model_args.eta_c_b,
-        eta_d_b=model_args.eta_d_b,
-        x_bar_b=model_args.x_bar_b,
-        p_c_bar_b=model_args.p_c_bar_b,
-        p_d_bar_b=model_args.p_d_bar_b,
-        V_nom_b=model_args.V_nom_b,
-        P_rated_b=model_args.P_rated_b
-    )
-
-    ev_model = EVModel(
-        dt=dt,
-        tau_ev=model_args.tau_ev,
-        eta_c_ev=model_args.eta_c_ev,
-        eta_d_ev=model_args.eta_d_ev,
-        x_bar_ev=model_args.x_bar_ev,
-        p_c_bar_ev=model_args.p_c_bar_ev,
-        p_d_bar_ev=model_args.p_d_bar_ev,
-        V_nom_ev=model_args.V_nom_ev,
-        P_rated_ev=model_args.P_rated_ev,
-        alpha_ev=model_args.alpha_ev,
-        Temperature_ev=model_args.temperature_ev,
-        time_leave=model_args.time_leave,
-        time_arrive=model_args.time_arrive,
-        distance=model_args.distance
-    )
-
-    utility_model = UtilityModel(
-        dt=dt,
-        utility=0
-    )
-
-    home_model = HomeModel(
-        dt=dt,
-        day=model_args.day,
-        i=i
-    )
-
-    solar_model = SolarPanelModel(
-        dt=dt,
-        day=model_args.day,
-        pdc0=model_args.pdc0,
-        v_mp=model_args.v_mp,
-        i_mp=model_args.i_mp,
-        v_oc=model_args.v_oc,
-        i_sc=model_args.i_sc,
-        alpha_sc=model_args.alpha_sc,
-        beta_oc=model_args.beta_oc,
-        gamma_pdc=model_args.gamma_pdc,
-        latitude=model_args.latitude,
-        longitude=model_args.longitude,
-        i = i
-    )
-
-    T_set = 22.0 #need to be a control input that changes with every i
-    theta = np.array([-5.0]) # a control input that changes with every i
-    hvac = HVAC (
+    hvac_model = HVAC (
         dt = dt,
         T_0 = model_args.T_0,
-        T_set = T_set,
-        theta= theta
+        i = i
     )
 
     optimizer = Optimizer(
@@ -154,6 +82,7 @@ def initialize_models_v2(model_args,dt,i):
         ev_model=ev_model,
         home_model=home_model,
         solar_model=solar_model,
+        hvac_model = hvac_model,
         x0_b=0.5,
         x0_ev=0.5
     )
@@ -386,6 +315,180 @@ def evbm_optimization_v3(optimizer,weight,IC_EV,IC_B,i):
 
     return x_b.value,x_ev.value,P_bat.value, P_ev.value*ev_plugged[:optimizer.K], P_util.value, P_sol, P_dem
 
+def evbm_optimization_v4(optimizer,weight,IC_EV,IC_B,IC_T,i):
+    # Define variables
+    x_b = cp.Variable((1, optimizer.K+1))  # Battery SOC
+    x_ev = cp.Variable((1, optimizer.K+1))  # EV SOC
+    P_bat_c = cp.Variable((optimizer.K, 1))  # Battery charging
+    P_bat_d = cp.Variable((optimizer.K, 1))  # Battery discharging
+    P_ev_c = cp.Variable((optimizer.K, 1))   # EV charging
+    P_ev_d = cp.Variable((optimizer.K, 1))   # EV discharging
+    P_bat = cp.Variable((optimizer.K, 1))  
+    P_ev = cp.Variable((optimizer.K, 1))  
+    P_util = cp.Variable((optimizer.K, 1))   # Grid power
+    # T_room = cp.Variable((1, optimizer.K+1)) # Room temperature 
+    # Q_hp = cp.Variable((optimizer.K, 1)) 
+
+    # Known data
+    time_range = np.arange(0, 24, optimizer.dt)
+        #Solar
+    solar_power = (optimizer.solar_model.dc_power_total.values)/1000
+    P_sol = solar_power.reshape(-1, 1)
+
+        #Demand
+    c_elec = np.where((time_range >= 14) & (time_range <= 20), 0.2573, 0.0825).reshape(-1, 1)
+    P_dem = optimizer.home_model.demand.to_numpy().reshape(-1, 1)
+
+        #Hvac
+    T_room,Q_hp,I_total = optimizer.hvac_model.loop_emulator()
+
+
+
+    #     #Heat Pump
+    # theta = optimizer.hvac_model.theta.reshape(-1, 1)              # (K,1)
+    # T_set = optimizer.hvac_model.T_set.reshape(-1, 1)              # (K,1)
+    # eta_hp = optimizer.hvac_model.compute_eta(theta).reshape(-1, 1)  # (K,1)
+    # PmaxHP = np.minimum(-0.0149 * theta + 4.0934, 4.0).reshape(-1, 1)  # (K,1)
+    # Q_aux = optimizer.hvac_model.Q_aux1  # scalar
+    # Qdote = 2.0  # scalar
+    # dT = optimizer.hvac_model.db  # temperature tolerance (scalar)
+
+    # # Effective resistance and thermal model params
+    # Rout = optimizer.hvac_model.Rout
+    # Rm = optimizer.hvac_model.Rm
+    # Tm = optimizer.hvac_model.Tm
+    # C = optimizer.hvac_model.C
+    # R = (Rout * Rm) / (Rout + Rm)
+    # R *= 1.15
+    # a = np.exp(-optimizer.dt / (R * C))  # scalar
+    # theta_cor = (Rm * theta + Rout * Tm) / (Rout + Rm)
+
+    # print(theta.flatten())
+    # print("\nTemperature setpoint T_set (°C):")
+    # print(T_set.flatten())
+    # print("\nHeat pump efficiency eta_hp:")
+    # print(eta_hp.flatten())
+    # print("\nMax heat pump power PmaxHP (kW):")
+    # print(PmaxHP.flatten())
+    # print("\nAuxiliary heat Q_aux (kW):")
+    # print(Q_aux)
+    # print("\nConstant heat term Qdote (kW):")
+    # print(Qdote)
+    # print("\nTemperature tolerance dT (°C):")
+    # print(dT)
+    # print("\nThermal parameters:")
+    # print(f"  Rout = {Rout}")
+    # print(f"  Rm = {Rm}")
+    # print(f"  Tm = {Tm}")
+    # print(f"  C = {C}")
+    # print(f"  R (effective resistance) = {R}")
+    # print(f"  a (thermal decay factor) = {a}")
+    # print("\nCorrected temperature theta_cor:")
+    # print(theta_cor.flatten())
+
+
+    #Determining when car leaves ad arrives
+    t_leave = optimizer.ev_model.time_leave
+    t_arrive = optimizer.ev_model.time_arrive
+    K_leave_real = int(t_leave / optimizer.dt)
+    K_arrive_real = int(t_arrive / optimizer.dt)
+    ev_plugged_real = np.ones(2 * len(P_sol), dtype=P_sol.dtype)
+    ev_plugged_real[K_leave_real:K_arrive_real] = 0
+    ev_plugged_real[K_leave_real+int((24/optimizer.dt)):K_arrive_real+int((24/optimizer.dt))] = 0
+    ev_plugged = ev_plugged_real[i:int(i + (24 / optimizer.dt))].reshape(-1, 1)
+    
+    ev_plugged_flat = ev_plugged.flatten()
+    transitions = np.diff(ev_plugged_flat)
+    leave_idxs = np.where(transitions == -1)[0] + 1
+    arrive_idxs = np.where(transitions == 1)[0] + 1
+    SOC_leave = 0.8
+    SOC_arrive = 0.2
+
+    X0_EV = IC_EV  
+    X0_B = IC_B
+    T_0 = IC_T
+    # Handle leave
+    if leave_idxs.size > 0:
+        K_leave = int(leave_idxs[0])
+    else:
+        K_leave = 0
+        X0_EV = SOC_leave
+    # Handle arrive
+    if arrive_idxs.size > 0:
+        K_arrive = int(arrive_idxs[0])
+    else:
+        K_arrive = 0
+        X0_EV = SOC_arrive
+
+    # Constraints
+    constraints = [
+        # Grid power balance
+        P_bat == optimizer.battery_model.eta_c_b * P_bat_c - (1 / optimizer.battery_model.eta_d_b) * P_bat_d,
+        P_ev == optimizer.ev_model.eta_c_ev * P_ev_c - (1 / optimizer.ev_model.eta_d_ev) * P_ev_d,
+        P_util == P_dem + P_bat + cp.multiply(P_ev, ev_plugged[:optimizer.K]) - P_sol[:optimizer.K] + Q_hp,
+
+        # EV SOC dynamics
+        x_ev[:, 1:optimizer.K+1] == optimizer.ev_model.sys_d.A @ x_ev[:, :optimizer.K] +
+                            (optimizer.ev_model.sys_d.B @ P_ev.T)/optimizer.ev_model.x_bar_ev,
+
+        P_ev <= optimizer.ev_model.p_c_bar_ev,
+        P_ev >= -optimizer.ev_model.p_d_bar_ev,
+
+        x_ev[0, 0] == X0_EV,
+        x_ev[0,K_leave] == SOC_leave,
+        x_ev[0,K_arrive] == SOC_arrive,
+        x_ev[0, optimizer.K] == x_ev[0, 0],
+        x_ev >= 0.1,
+        x_ev <= 0.9,
+
+        # Battery SOC dynamics
+        x_b[:, 1:optimizer.K+1] == optimizer.battery_model.sys_d.A @ x_b[:, :optimizer.K] +
+                           (optimizer.battery_model.sys_d.B @ P_bat.T)/optimizer.battery_model.x_bar_b,
+        P_bat <= optimizer.battery_model.p_c_bar_b,
+        P_bat >= -optimizer.battery_model.p_d_bar_b,
+
+        x_b[0, 0] == X0_B,
+        x_b[0, optimizer.K] == x_b[0, 0],
+        x_b >= 0.1,
+        x_b <= 0.9,
+
+        #Heat pump temperature dynamics
+        # T_room[0, 0] == T_0,
+        # T_room[0, 1:optimizer.K+1] == a * T_room[0, :optimizer.K] + (1 - a) * (theta_cor.T + R * (Q_hp[0,:optimizer.K]+Qdote)),
+        # Q_hp >= 0,
+        # Q_hp <= cp.multiply(PmaxHP,eta_hp) + Q_aux,
+        # cp.abs(T_room[0,:optimizer.K] - T_set.T[0,:optimizer.K]) <= 2
+
+    ]
+
+    # Objective function 
+    objective = cp.Minimize(
+        cp.sum(                
+                weight * cp.norm(optimizer.dt * P_util, 2) +                        # moderate penalty on total grid use
+                # 5 * cp.norm(optimizer.dt * P_bat, 2) +                            # low penalty on battery use
+                # 5 * cp.norm(optimizer.dt * P_ev, 2)+                              # low penalty on EV use
+
+                50 * cp.norm(P_bat[:, 1:] - P_bat[:, :-1], 2) +                     # penalize sudden changes in Battery power
+                50 * cp.norm(P_ev[:, 1:] - P_ev[:, :-1], 2) +                       # penalize sudden changes in EV power
+
+                10 * optimizer.dt * cp.maximum(0, cp.multiply(c_elec, P_util)) +    # keep energy cost awareness
+
+                10 *optimizer.dt * cp.maximum(0, x_b[:, :optimizer.K] - 0.8) +      # soft constraints on Battery SOC
+                10 *optimizer.dt * cp.maximum(0, 0.2 - x_b[:, :optimizer.K]) +
+                
+                10 * optimizer.dt * cp.maximum(0, x_ev[:, :optimizer.K] - 0.8) +    # soft constraints on EV SOC
+                10 * optimizer.dt * cp.maximum(0, 0.2 - x_ev[:, :optimizer.K])
+
+                #1e4* cp.sum_squares(T_room[0, 1:].T - T_set)                       # Thermal Comfort
+                               
+        )
+    )
+
+    # Solve
+    problem = cp.Problem(objective, constraints)
+    problem.solve(solver=cp.GUROBI, verbose=True)
+    return x_b.value,x_ev.value,T_room,P_bat.value, P_ev.value*ev_plugged[:optimizer.K], P_util.value, P_sol, P_dem,Q_hp
+
 def mpc_v1(model_args, dt, Horizon):
     N_steps = int(Horizon / dt)
     
@@ -401,7 +504,7 @@ def mpc_v1(model_args, dt, Horizon):
     p_D = np.zeros(N_steps)
 
     for i in range(N_steps):
-        optimizer = initialize_models(model_args, dt, i)
+        optimizer = initialize_models_v2(model_args, dt, i)
         if i == 0:
             x_B[i] = optimizer.x0_b
             x_EV[i] = optimizer.x0_ev
@@ -506,6 +609,141 @@ def plot_optimizer_results(x_b, x_ev, P_bat, P_ev, P_util, P_sol, P_dem, dt, day
     plt.legend()
     plt.tight_layout()
     plt.savefig(os.path.join(folder_path, "power_flow_plot.png"))
+    plt.close()
+
+    ## Verify Power conservation
+    # fig1, axs1 = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
+    # # Battery SOC
+    # axs1[0].plot(time, x_b, label="State of Charge (SOC) Battery", color="r", linewidth=2)
+    # axs1[0].set_ylabel("SOC (%)")
+    # axs1[0].set_title("Battery: State of Charge (SOC) and Power")
+    # axs1[0].grid(True)
+    # axs1[0].legend(loc="best")
+    # # Battery Power
+    # axs1[1].plot(time, P_bat, label="Battery Power (P_bat)", color="g", linewidth=2)
+    # axs1[1].set_xlabel("Time (hours)")
+    # axs1[1].set_ylabel("Power (kW)")
+    # axs1[1].grid(True)
+    # axs1[1].legend(loc="best")
+    # plt.tight_layout()
+
+    # fig2, axs2 = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
+    # # EV SOC
+    # axs2[0].plot(time, x_ev, label="State of Charge (SOC) EV", color="grey", linewidth=2)
+    # axs2[0].set_ylabel("SOC (%)")
+    # axs2[0].set_title("EV: State of Charge (SOC) and Power")
+    # axs2[0].grid(True)
+    # axs2[0].legend(loc="best")
+    # # EV Power
+    # axs2[1].plot(time, P_ev, label="EV Power (P_ev)", color="black", linewidth=2)
+    # axs2[1].set_xlabel("Time (hours)")
+    # axs2[1].set_ylabel("Power (kW)")
+    # axs2[1].grid(True)
+    # axs2[1].legend(loc="best")
+    # plt.tight_layout()
+
+def plot_optimizer_results_v2(x_b, x_ev, P_bat, P_ev, P_util, P_sol, P_dem,T_room,T_set,theta,Q_hp,dt, day,i,run_id=None):
+    safe_day = day.replace("/", "-")
+    if run_id is None:
+        run_id = safe_day
+
+    # Base folder name pattern
+    base_dir = "plots"
+    base_name = f"run_{run_id}"
+    version = 1
+    folder_name = f"{base_name}_v{version}"
+    folder_path = os.path.join(base_dir, folder_name)
+
+    # Scan existing folders to find max version
+    existing_folders = [name for name in os.listdir(base_dir) if re.match(rf"{re.escape(base_name)}_v\d+$", name)]
+    if existing_folders:
+        # Extract version numbers
+        versions = [int(re.search(r"_v(\d+)$", name).group(1)) for name in existing_folders]
+        version = max(versions) + 1
+        folder_name = f"{base_name}_v{version}"
+        folder_path = os.path.join(base_dir, folder_name)
+
+    os.makedirs(folder_path)
+
+    # Convert arrays to 1D and align dimensions
+    x_b = np.squeeze(x_b)[:-1]
+    x_ev = np.squeeze(x_ev)[:-1]
+    T_room = np.squeeze(T_room)
+    T_set = np.squeeze(T_set)
+    theta = np.squeeze(theta)
+    P_util = np.squeeze(P_util)
+    Q_hp = np.squeeze(Q_hp)
+    P_bat = np.squeeze(P_bat)
+    P_ev = np.squeeze(P_ev)
+    P_sol = np.squeeze(P_sol)
+    P_dem = np.squeeze(P_dem)
+    
+    time = np.arange(0, len(P_util) * dt, dt) 
+    time = time + dt*i
+    P_tot = -P_util + P_dem + P_bat - P_sol + P_ev + Q_hp # Power conservation check
+
+    # Energy metrics
+    E_grid_to_home = np.sum(P_util[P_util > 0]) * dt
+    E_home_demand = np.sum(P_dem) * dt
+    E_solar_generated = np.sum(P_sol) * dt
+    E_fed_to_grid = -np.sum(P_util[P_util < 0]) * dt
+    # save_metrics(weight,E_grid_to_home,E_fed_to_grid)
+
+    # Save energy summary to text file
+    energy_summary = (
+        f"=== Energy Flow Summary for {day} ===\n"
+        f"1. Grid supplied to Home/Battery: {E_grid_to_home:.2f} kWh\n"
+        f"2. Total Home Demand:             {E_home_demand:.2f} kWh\n"
+        f"3. Solar Energy Produced:         {E_solar_generated:.2f} kWh\n"
+        f"4. Energy Fed Back to Grid:       {E_fed_to_grid:.2f} kWh\n"
+    )
+    print(energy_summary)
+    with open(os.path.join(folder_path, "energy_summary.txt"), "w") as f:
+        f.write(energy_summary)
+
+    # Plot SOC
+    plt.figure(figsize=(10, 6))
+    plt.plot(time, x_b, label="SOC Battery", color="r", linewidth=2)
+    plt.plot(time, x_ev, label="SOC EV", color="grey", linewidth=2)
+    plt.xlabel("Time (hours)")
+    plt.ylabel("State of Charge (%)")
+    plt.title(f"SOC of Battery and EV on {day}")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(os.path.join(folder_path, "soc_plot.png"))
+    plt.close()
+
+    # Plot Power Flows
+    plt.figure(figsize=(10, 6))
+    plt.plot(time, P_util, label="Utility Power (P_util)", color="b", linewidth=2)
+    plt.plot(time, P_bat, label="Battery Power (P_bat)", color="g", linewidth=2)
+    plt.plot(time, P_ev, label="EV Power (P_ev)", color="black", linewidth=2)
+    plt.plot(time, P_sol, label="Solar Power (P_sol)", color="orange", linewidth=2)
+    plt.plot(time,Q_hp,label ="Heat Pump Power (P_hp)" , color ="grey",linewidth=2)
+    plt.plot(time, P_dem, label="Demand", color="purple", linewidth=2)
+    plt.plot(time, P_tot, label="Power Conservation (P_tot)", color="red", linestyle='--', linewidth=2)
+    plt.xlabel("Time (hours)")
+    plt.ylabel("Power (kW)")
+    plt.title(f"Power Flows and Conservation Check on {day}")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(os.path.join(folder_path, "power_flow_plot.png"))
+    plt.close()
+
+    # Plot Temperatures
+    plt.figure(figsize=(10, 6))
+    plt.plot(time, T_room, label="Room Temperature (C) ", color="b", linewidth=2)
+    plt.plot(time, T_set, label="Set Temperature (C) ", color="red", linestyle='--', linewidth=2)
+    plt.plot(time, theta, label=" Ambient Temperature (C) ", color="g", linewidth=2)
+    plt.xlabel("Time (hours)")
+    plt.ylabel("Temperature (C) ")
+    plt.title(f"Room,Set, and Ambient Temperature on {day}")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(os.path.join(folder_path, "temperature_change_plot.png"))
     plt.close()
 
     ## Verify Power conservation

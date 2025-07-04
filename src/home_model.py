@@ -9,10 +9,11 @@ class HomeModel:
           # self.start_time = "6/15/2024 0:00"
           # self.end_time = "6/16/2024 0:00"
           self.start_time, self.end_time = self.date_format()
-          self.demand_path = "data/total_home_power_3.csv" 
-          self.demand = self.load_demand_data(self.demand_path,self.start_time,self.end_time)
+          self.demand_path = "data/ampstot_Lreturn.csv" 
+          self.demand = self.load_demand_data_v2(self.demand_path,self.start_time,self.end_time)
 
      def load_demand_data(self,file_path, start_time, end_time):
+          #Gets Power Directly 
           demand_data = pd.read_csv(file_path)
           demand_data.columns = ['Time', 'Value']
           demand_data["Time"] = pd.to_datetime(demand_data["Time"])  # Convert to datetime
@@ -26,6 +27,25 @@ class HomeModel:
           demand_data.set_index('Time', inplace=True)
           freq = f'{int(self.dt*60)}min'
           demand_data = demand_data.resample(freq).interpolate(method='time')['Value']
+
+          return demand_data
+     
+     def load_demand_data_v2(self,file_path, start_time, end_time):
+          #Gets Current and Converts it to Power
+          demand_data = pd.read_csv(file_path)
+          demand_data.columns = ['Time', 'Value']
+          demand_data["Time"] = pd.to_datetime(demand_data["Time"])  # Convert to datetime
+
+          # Find the index of start_time
+          start_index = demand_data[demand_data["Time"] == pd.Timestamp(start_time)].index[0]
+          end_index = demand_data[demand_data["Time"] == pd.Timestamp(end_time)].index[0]
+          demand_data = demand_data.loc[start_index:end_index-1, ['Time', 'Value']]
+          demand_data['Value'] = demand_data['Value'] / 1000
+
+          demand_data.set_index('Time', inplace=True)
+          freq = f'{int(self.dt*60)}min'
+          demand_data = demand_data.resample(freq).interpolate(method='time')['Value']
+          demand_data = demand_data*240
 
           return demand_data
      
