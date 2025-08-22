@@ -70,7 +70,7 @@ def args_handler():
 
 
     # HVAC Parameters
-    parser.add_argument('--T_0', type=float, default= 20, help='Set Temperature in Deg Celcius (C)')
+    parser.add_argument('--T_0', type=float, default= 18, help='Set Temperature in Deg Celcius (C)')
 
     # Display Parameters
     parser.add_argument('--check_params',type=bool, default=False, help='Check Parameters [True/False]')
