@@ -22,7 +22,7 @@ def args_handler():
     """Parse command line arguments for battery model parameters."""
     parser = argparse.ArgumentParser(description='Charger Battery Model (b) and Electric Vehicle(ev) Parameters')
 
-    # Charger Battery - Savant/POMCube
+    # Charger Battery - GM PowerShift Charger
         ## Efficiency Parameters
     parser.add_argument('--tau_b', type=check_pos, default=1600, help='Dissipation Time Constant (h) [typically between 800-2400 h]')
     parser.add_argument('--eta_c_b', type=check_eta, default=0.98, help='Charging Efficiency (fraction, e.g., 0.95 for 95%%)')
